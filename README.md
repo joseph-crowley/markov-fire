@@ -25,8 +25,8 @@ To provide a taste of how this model behaves, the file also includes a script in
 To dive into this fascinating journey of understanding the wildfire spread process, start by cloning this repository:
 
 ```bash
-git clone <url-to-this-repo>
-cd <repo-directory>
+git clone https://github.com/joseph-crowley/markov-fire.git
+cd markov-fire
 ```
 
 Next, ensure you have Python 3.6 or later installed. You can verify this by running:
