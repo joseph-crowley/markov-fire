@@ -29,6 +29,11 @@ class CombinedModel:
             new_grid = self.update_grid(grids[-1], new_fire_cells, extinguished_cells, suppressed_cells)
             grids.append(new_grid)
 
+            if t == extinguishment_time:
+                # The fire is extinguished
+                return grids, extinguishment_time
+
+
         return grids, extinguishment_time
 
     def update_grid(self, grid: np.ndarray, new_fire_cells: int, extinguished_cells: int, suppressed_cells: int):
