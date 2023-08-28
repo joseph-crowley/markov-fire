@@ -23,24 +23,48 @@ def run_visualization(grid_size, n_steps, initial_population, time_steps):
 
     # Initialize combined model
     combined_model = CombinedModel(temporal_model, grid, environment)
-
+ 
     # Run simulation
-    grids = combined_model.run_simulation(initial_population, time_steps)
-
-    # Set up the plot
-    fig, ax = plt.subplots()
-    ax.set_title('Forest Fire Simulation')
-    cmap = ListedColormap(['white', 'green', 'red', 'grey'])
+    grids, extinguishment_time = combined_model.run_simulation(initial_population, time_steps)
+    populations = [np.sum(g == GridState.ON_FIRE.value) for g in grids]
+    footprints = [np.sum((g == GridState.ON_FIRE.value) | (g == GridState.BURNED.value) | (g == GridState.PREVIOUSLY_BURNED.value)) for g in grids]
+    
+    # First Plot: Grid Animation
+    fig1, ax1 = plt.subplots()
+    ax1.set_title('Forest Fire Simulation')
+    cmap = ListedColormap(['white', 'green', 'red', 'grey', 'black'])
 
     def update(frame):
-        ax.clear()
-        ax.set_title(f'Forest Fire Simulation (Time Step: {frame+1})')
-        im = ax.imshow(grids[frame], cmap=cmap, vmin=0, vmax=3)
-        ax.set_xticks([])
-        ax.set_yticks([])
+        ax1.clear()
+        ax1.set_title(f'Forest Fire Simulation (Time Step: {frame+1})')
+        im = ax1.imshow(grids[frame], cmap=cmap, vmin=0, vmax=4)
+        ax1.set_xticks([])
+        ax1.set_yticks([])
 
-    ani = FuncAnimation(fig, update, frames=len(grids), interval=1000, blit=False)
+    ani = FuncAnimation(fig1, update, frames=len(grids), interval=1000, blit=False)
+    
+    # Second Plot: Population and Footprint
+    fig2, ax2 = plt.subplots()
+    ax2.set_xlabel('Time Step')
+    ax2.set_ylabel('Active Fire', color='tab:red')
+    ax2.plot(populations, color='tab:red')
+    ax2.tick_params(axis='y', labelcolor='tab:red')
+
+    ax3 = ax2.twinx()
+    ax3.set_ylabel('Burned Area', color='tab:blue')
+    ax3.plot(footprints, color='tab:blue')
+    ax3.tick_params(axis='y', labelcolor='tab:blue')
+    
+    plt.title('Wildfire Spread Process Example')
+    fig2.tight_layout()
+
     plt.show()
+
+    # Print the extinguishment time
+    if extinguishment_time is not None:
+        print(f"The fire was extinguished at time step {extinguishment_time}.")
+    else:
+        print("The fire was not extinguished within the simulation time.")
 
 if __name__ == "__main__":
     run_visualization(grid_size=50, n_steps=50, initial_population=10, time_steps=100)

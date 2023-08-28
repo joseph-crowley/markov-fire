@@ -17,11 +17,12 @@ class CombinedModel:
             new_grid = self.update_grid(grids[-1], new_fire_cells)
             grids.append(new_grid)
 
-        return grids
+        return grids, extinguishment_time  # Added extinguishment time
 
     def update_grid(self, grid: np.ndarray, new_fire_cells: int):
         new_grid = grid.copy()
         for _ in range(new_fire_cells):
             perturbation = self.environment.get_perturbation(new_grid)
             new_grid[perturbation] = GridState.ON_FIRE.value
+        # Placeholder for other functionalities like extinguishment and wind direction
         return new_grid

@@ -1,6 +1,5 @@
 from typing import List, Tuple
 from enum import Enum
-
 import numpy as np
 import random
 
@@ -10,10 +9,12 @@ class GridState(Enum):
     ON_FIRE = 2
     BURNED = 3
     PREVIOUSLY_BURNED = 4
+    FIREBREAK = 5  # New state for firebreaks
 
 class Environment:
     def __init__(self, perturbations: List[Tuple[Tuple[int, int], float]]):
         self.perturbations = perturbations
+        self.wind_directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']  # Wind directions
 
     def get_perturbation(self, grid: np.ndarray=None) -> Tuple[int, int]:
         if grid is not None:
@@ -34,3 +35,13 @@ class Environment:
             weights=[p[1] for p in self.perturbations],
             k=1
         )[0]
+        
+    def get_wind_direction(self) -> str:
+        """Returns a random wind direction."""
+        return random.choice(self.wind_directions)
+
+    def get_extinguish_probability(self, grid: np.ndarray) -> float:
+        """Calculate and return the extinguish probability based on the grid."""
+        # Placeholder for now, can be expanded
+        return 0.1
+
