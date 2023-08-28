@@ -57,7 +57,7 @@ class Environment:
     def calculate_spread_rate(self, topography: Tuple[float, float], 
                               wind: Tuple[float, float], 
                               fuel_conditions: Tuple[float, str],
-                              atmospheric_conditions: Tuple[float, float]) -> float:
+                              atmospheric_conditions: Tuple[float, float], fire_proximity: float) -> float:
         slope, vegetation_density = topography
         wind_vector = np.array(wind)
         moisture, fuel_type = fuel_conditions
@@ -67,7 +67,7 @@ class Environment:
         fuel_factor = self.fuel_factor(vegetation_density, moisture, fuel_type)
         atmospheric_factor = self.atmospheric_factor(humidity, temperature)
 
-        return directional_speed * fuel_factor * atmospheric_factor
+        return directional_speed * fuel_factor * atmospheric_factor * (1 + fire_proximity)
 
     def calculate_extinguish_rate(self, natural_barriers: float, 
                                   weather_conditions: float, extinguish_probability: float) -> float:

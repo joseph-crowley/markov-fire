@@ -123,7 +123,7 @@ class CombinedModel:
     def calculate_effective_rates(self, grid: np.ndarray):
         effective_rates = {}
         perimeter_cells = self.system.get_perimeter_cells(grid)
-        extinguish_probability = self.environment.get_fire_proximity(grid)
+        fire_proximity = self.environment.get_fire_proximity(grid)
         #print("\n\nPerimeter cells (calculate effective rates):")
         #print(perimeter_cells)
         n = len(perimeter_cells)
@@ -143,8 +143,8 @@ class CombinedModel:
             cost = 1.0
 
             # Calculate rates for this cell
-            spread_rate = self.environment.calculate_spread_rate(topography, wind, fuel_conditions, atmospheric_conditions)
-            extinguish_rate = self.environment.calculate_extinguish_rate(natural_barriers, weather_conditions, extinguish_probability[cell])
+            spread_rate = self.environment.calculate_spread_rate(topography, wind, fuel_conditions, atmospheric_conditions, fire_proximity[cell])
+            extinguish_rate = self.environment.calculate_extinguish_rate(natural_barriers, weather_conditions, 1 - fire_proximity[cell])
             firefighting_rate = self.environment.calculate_firefighting_rate(current_phase, mobility, potency, cost)
 
             # Store effective rates for this cell

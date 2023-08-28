@@ -36,7 +36,7 @@ def run_visualization(grid_size, n_steps, initial_population, time_steps, resour
     # Run simulation
     grids, extinguishment_time = combined_model.run_simulation(initial_population, time_steps)
     populations = [np.sum((g == GridState.ON_FIRE.value) | (g == GridState.BURNED.value)) for g in grids]
-    footprints = [np.sum((g == GridState.ON_FIRE.value) | (g == GridState.BURNED.value) | (g == GridState.PREVIOUSLY_BURNED.value)) for g in grids]
+    footprints = [np.sum((g == GridState.ON_FIRE.value) | (g == GridState.BURNED.value) | (g == GridState.PREVIOUSLY_BURNED.value) | (g == GridState.PREVIOUSLY_SUPPRESSED.value) | (g == GridState.SUPPRESSED.value)) for g in grids]
 
     # Print the extinguishment time
     if extinguishment_time is not None:
