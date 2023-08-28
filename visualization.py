@@ -3,10 +3,10 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.colors import ListedColormap
 from combined_model import CombinedModel
 from temporal_model import WildfireSpreadProcess
-from spatial_model import GridState, Environment
+from spatial_model import GridState, Environment, System, Optimization, Simulation
 import numpy as np
 
-def run_visualization(grid_size, n_steps, initial_population, time_steps):
+def run_visualization(grid_size, n_steps, initial_population, time_steps, resources):
     # Initialize temporal model
     spread_rate = 0.05
     extinguish_rate = 0.01
@@ -22,7 +22,7 @@ def run_visualization(grid_size, n_steps, initial_population, time_steps):
     grid = np.random.choice([GridState.EMPTY.value, GridState.TREE.value], size=(grid_size, grid_size), p=[0.1, 0.9])
 
     # Initialize combined model
-    combined_model = CombinedModel(temporal_model, grid, environment)
+    combined_model = CombinedModel(temporal_model, grid, environment, resources)
  
     # Run simulation
     grids, extinguishment_time = combined_model.run_simulation(initial_population, time_steps)
@@ -67,4 +67,5 @@ def run_visualization(grid_size, n_steps, initial_population, time_steps):
         print("The fire was not extinguished within the simulation time.")
 
 if __name__ == "__main__":
-    run_visualization(grid_size=50, n_steps=50, initial_population=10, time_steps=100)
+    resources = [("firebreak", 0.5), ("thinning", 0.3)]  # Example resources
+    run_visualization(grid_size=50, n_steps=50, initial_population=10, time_steps=100, resources=resources)
