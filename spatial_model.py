@@ -16,6 +16,7 @@ class Environment:
     def __init__(self, perturbations: List[Tuple[Tuple[int, int], float]]):
         self.perturbations = perturbations
         self.wind_directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+        self.budget = 1.0
 
     def get_perturbation(self, grid: np.ndarray=None) -> Tuple[int, int]:
         if grid is not None:
@@ -58,9 +59,72 @@ class Environment:
 
         return dist
 
+    def calculate_spread_rate(self, topography: Tuple[float, float], 
+                              wind: Tuple[float, float], 
+                              fuel_conditions: Tuple[float, str],
+                              atmospheric_conditions: Tuple[float, float]) -> float:
+        slope, vegetation_density = topography
+        wind_vector = np.array(wind)
+        moisture, fuel_type = fuel_conditions
+        humidity, temperature = atmospheric_conditions
+
+        directional_speed = np.dot(wind_vector, np.array([np.sin(slope), np.cos(slope)]))
+        fuel_factor = self.fuel_factor(vegetation_density, moisture, fuel_type)
+        atmospheric_factor = self.atmospheric_factor(humidity, temperature)
+
+        return directional_speed * fuel_factor * atmospheric_factor
+
+    def calculate_extinguish_rate(self, natural_barriers: float, 
+                                  weather_conditions: float) -> float:
+        return self.environment_factor(natural_barriers, weather_conditions)
+    
+    def calculate_firefighting_rate(self, current_phase: str, 
+                                     mobility: float, 
+                                     potency: float, 
+                                     cost: float) -> float:
+        base_rate = self.resource_allocation(current_phase, mobility, potency, cost)
+        capped_rate = min(base_rate, self.budget)
+        self.budget -= capped_rate  # Update remaining budget
+        return capped_rate
+
+    @staticmethod
+    def fuel_factor(vegetation_density: float, moisture: float, fuel_type: str) -> float:
+        # Placeholder function to calculate fuel factor
+        return 1.0
+
+    @staticmethod
+    def atmospheric_factor(humidity: float, temperature: float) -> float:
+        # Placeholder function to calculate atmospheric factor
+        return 1.0
+    
+    @staticmethod
+    def environment_factor(natural_barriers: float, weather_conditions: float) -> float:
+        # Placeholder function to calculate extinguishment rate
+        return 0.01
+    
+    @staticmethod
+    def resource_allocation(current_phase: str, mobility: float, potency: float, cost: float) -> float:
+        # Placeholder function to calculate base firefighting rate
+        return 0.02
+
 class System:
     def __init__(self, grid: np.ndarray):
         self.grid = grid
+
+    def get_perimeter_cells(self, grid: np.ndarray):
+        """get the cells at the perimeter of the fire"""
+        perimeter_cells = []
+        for i in range(grid.shape[0]):
+            for j in range(grid.shape[1]):
+                if grid[i, j] == GridState.ON_FIRE.value:
+                    #print(f"Cell ({i}, {j}) is on fire")
+                    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                        ni, nj = i + dx, j + dy
+                        if 0 <= ni < grid.shape[0] and 0 <= nj < grid.shape[1]:
+                            if grid[ni, nj] == GridState.TREE.value:
+                                perimeter_cells.append((i, j))
+                                break
+        return perimeter_cells
 
     def evaluate_performance(self) -> float:
         tree_density = np.sum(self.grid) / (self.grid.shape[0] * self.grid.shape[1])

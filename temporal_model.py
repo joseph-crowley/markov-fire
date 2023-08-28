@@ -23,6 +23,11 @@ class WildfireSpreadProcess:
         population = [initial_population]
         footprint = [initial_population]
         extinguishment_time = None  # Keep track of when the fire is extinguished
+
+        # Initialize new lists for the spread, extinguish, and suppression counts
+        spread_counts = []
+        extinguish_counts = []
+        suppression_counts = []
         
         for t in range(time_steps):
             # Calculate spread, extinguish, and suppression using variable rates if applicable
@@ -40,9 +45,14 @@ class WildfireSpreadProcess:
             # Append the next population and footprint to the list
             population.append(next_population)
             footprint.append(next_footprint)
+
+            # Append the spread, extinguish, and suppression counts to the new lists
+            spread_counts.append(spread)
+            extinguish_counts.append(extinguish)
+            suppression_counts.append(suppression)
             
             # Update the extinguishment time if the fire is out
             if next_population == 0 and extinguishment_time is None:
                 extinguishment_time = t
 
-        return population, footprint, extinguishment_time
+        return population, footprint, extinguishment_time, spread_counts, extinguish_counts, suppression_counts

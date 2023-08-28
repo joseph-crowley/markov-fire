@@ -9,7 +9,7 @@ import numpy as np
 def run_visualization(grid_size, n_steps, initial_population, time_steps, resources):
     # Initialize temporal model
     spread_rate = 0.05
-    extinguish_rate = 0.01
+    extinguish_rate = 0.5
     firefighting_rate = 0.02
     system_size = grid_size ** 2
     temporal_model = WildfireSpreadProcess(spread_rate, extinguish_rate, firefighting_rate, system_size)
@@ -20,6 +20,15 @@ def run_visualization(grid_size, n_steps, initial_population, time_steps, resour
 
     # Initialize grid
     grid = np.random.choice([GridState.EMPTY.value, GridState.TREE.value], size=(grid_size, grid_size), p=[0.1, 0.9])
+
+    # add a fire to the grid at a random location with size initial_population
+    fire_location = np.random.randint(0, grid_size, size=2)
+
+    # place the firelets around the fire location, checking that they are within the grid
+    for i in range(initial_population):
+        firelet_location = fire_location + np.random.randint(-2, 3, size=2)
+        firelet_location = np.clip(firelet_location, 0, grid_size-1)
+        grid[firelet_location[0], firelet_location[1]] = GridState.ON_FIRE.value
 
     # Initialize combined model
     combined_model = CombinedModel(temporal_model, grid, environment, resources)
