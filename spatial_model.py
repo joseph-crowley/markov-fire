@@ -11,26 +11,21 @@ class GridState(Enum):
     PREVIOUSLY_BURNED = 4
     FIREBREAK = 5
     REMOVED = 6  # State for removed trees due to thinning
+    SUPPRESSED = 7  # State for suppressed fires
+    PREVIOUSLY_SUPPRESSED = 8  # State for previously suppressed fires
 
 class Environment:
     def __init__(self, perturbations: List[Tuple[Tuple[int, int], float]]):
         self.perturbations = perturbations
         self.wind_directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
-        self.budget = 1.0
+        self.budget = 100.0
 
     def get_perturbation(self, grid: np.ndarray=None) -> Tuple[int, int]:
+        """add a perturbation to the grid at a random location with size initial_population"""
         if grid is not None:
             tree_mask = (grid == GridState.TREE.value)
-            on_fire_mask = (grid == GridState.ON_FIRE.value)
-            tree_coords = np.array(np.where(tree_mask)).T
-            fire_coords = np.array(np.where(on_fire_mask)).T
-            dist = np.zeros(grid.shape)
-            for tree in tree_coords:
-                distances = np.sum((fire_coords - tree) ** 2, axis=1)
-                dist[tree[0], tree[1]] = np.sum(np.exp(-distances / (2**2)))
-            dist = dist / np.sum(dist)
-            dist = np.nan_to_num(dist, nan=1)
-            perturbations = [((i,j), dist[i,j]) for i in range(grid.shape[0]) for j in range(grid.shape[1])]
+            dist = self.get_fire_proximity(grid) 
+            perturbations = [((i,j), dist[i,j]) for i in range(grid.shape[0]) for j in range(grid.shape[1]) if tree_mask[i,j]] 
             self.perturbations = perturbations
         return random.choices(
             population=[p[0] for p in self.perturbations],
@@ -41,7 +36,7 @@ class Environment:
     def get_wind_direction(self) -> str:
         return random.choice(self.wind_directions)
 
-    def get_extinguish_probability(self, grid: np.ndarray) -> np.ndarray:
+    def get_fire_proximity(self, grid: np.ndarray) -> np.ndarray:
         fire_coords = np.argwhere(grid == GridState.ON_FIRE.value)
         if len(fire_coords) == 0:
             return np.zeros(grid.shape)
@@ -75,8 +70,8 @@ class Environment:
         return directional_speed * fuel_factor * atmospheric_factor
 
     def calculate_extinguish_rate(self, natural_barriers: float, 
-                                  weather_conditions: float) -> float:
-        return self.environment_factor(natural_barriers, weather_conditions)
+                                  weather_conditions: float, extinguish_probability: float) -> float:
+        return self.environment_factor(natural_barriers, weather_conditions) * extinguish_probability
     
     def calculate_firefighting_rate(self, current_phase: str, 
                                      mobility: float, 
@@ -89,23 +84,55 @@ class Environment:
 
     @staticmethod
     def fuel_factor(vegetation_density: float, moisture: float, fuel_type: str) -> float:
-        # Placeholder function to calculate fuel factor
-        return 1.0
+        # Assuming vegetation_density is a factor between 0 and 1, where 1 means very dense vegetation
+        # Assuming moisture is a percentage between 0 and 100
+        # Assuming fuel_type could be "grass", "brush", "timber", etc.
+
+        # Moisture effect: The wetter, the less conducive for fire
+        moisture_factor = 1 - (moisture / 100.0)
+
+        # Vegetation density effect
+        density_factor = vegetation_density
+
+        # Fuel type effect
+        fuel_type_factor = {
+            'grass': 0.6,
+            'brush': 0.8,
+            'timber': 1.0
+        }.get(fuel_type, 0.5)  # default to 0.5 if fuel type is unknown
+
+        return min(max(moisture_factor * density_factor * fuel_type_factor, 0), 1)
 
     @staticmethod
     def atmospheric_factor(humidity: float, temperature: float) -> float:
-        # Placeholder function to calculate atmospheric factor
-        return 1.0
+        # Assuming humidity is a percentage between 0 and 100
+        # Assuming temperature is in degrees Celsius
+        # The atmospheric factor ranges between 0 and 1
+        humidity_factor = 1 - (humidity / 100.0)
+        temperature_factor = (temperature - 20) / 30.0 if temperature > 20 else 0
+        return min(max(humidity_factor + temperature_factor, 0), 1)
     
     @staticmethod
     def environment_factor(natural_barriers: float, weather_conditions: float) -> float:
-        # Placeholder function to calculate extinguishment rate
-        return 0.01
+        # Assuming natural_barriers is a factor between 0 and 1 where 1 means many natural barriers
+        # Assuming weather_conditions is a factor between 0 and 1 where 1 means favorable weather
+        return min(natural_barriers + weather_conditions, 1)
+
     
     @staticmethod
     def resource_allocation(current_phase: str, mobility: float, potency: float, cost: float) -> float:
-        # Placeholder function to calculate base firefighting rate
-        return 0.02
+        # Assuming current_phase could be "initial", "developed", or "controlled"
+        # Assuming mobility, potency, and cost are factors between 0 and 1
+
+        phase_factor = {
+            'initial': 1,
+            'developed': 0.8,
+            'controlled': 0.5
+        }.get(current_phase, 0.5)  # default to 0.5 if phase is unknown
+
+        resource_factor = mobility * 0.4 + potency * 0.4 + cost * 0.2
+        return min(phase_factor * resource_factor, 1)
+
 
 class System:
     def __init__(self, grid: np.ndarray):
@@ -160,7 +187,7 @@ class Simulation:
     def simulate_step(self, grid: np.ndarray) -> np.ndarray:
         new_grid = grid.copy()
         wind_direction = self.environment.get_wind_direction()
-        extinguish_probability = self.environment.get_extinguish_probability(grid)
+        extinguish_probability = self.environment.get_fire_proximity(grid)
 
         for i in range(grid.shape[0]):
             for j in range(grid.shape[1]):

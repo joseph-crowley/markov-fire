@@ -29,7 +29,7 @@ class CombinedModel:
             new_grid = self.update_grid(grids[-1], new_fire_cells, extinguished_cells, suppressed_cells)
             grids.append(new_grid)
 
-            if t == extinguishment_time:
+            if t == extinguishment_time or population[t] == 0:
                 # The fire is extinguished
                 return grids, extinguishment_time
 
@@ -101,13 +101,21 @@ class CombinedModel:
         extinguishments = [candidate_extinguish_cells[i] for i in selected_extinguish_indices]
         suppressions = [candidate_suppress_cells[i] for i in selected_suppress_indices]
 
-        # Update the grid
+        # update grid based on previous state
+        for i in range(grid.shape[0]):
+            for j in range(grid.shape[1]):
+                if grid[i, j] == GridState.ON_FIRE.value:
+                    new_grid[i, j] = GridState.BURNED.value
+                elif grid[i, j] == GridState.SUPPRESSED.value:
+                    new_grid[i, j] = GridState.PREVIOUSLY_SUPPRESSED.value
+
+        # Update the grid based on temporal dynamics
         for i, j in new_fires:
             new_grid[i, j] = GridState.ON_FIRE.value
         for i, j in extinguishments:
-            new_grid[i, j] = GridState.BURNED.value
+            new_grid[i, j] = GridState.PREVIOUSLY_BURNED.value
         for i, j in suppressions:
-            new_grid[i, j] = GridState.REMOVED.value  # Or some other state representing suppression
+            new_grid[i, j] = GridState.SUPPRESSED.value  # Or some other state representing suppression
 
         return new_grid
 
@@ -115,6 +123,7 @@ class CombinedModel:
     def calculate_effective_rates(self, grid: np.ndarray):
         effective_rates = {}
         perimeter_cells = self.system.get_perimeter_cells(grid)
+        extinguish_probability = self.environment.get_fire_proximity(grid)
         #print("\n\nPerimeter cells (calculate effective rates):")
         #print(perimeter_cells)
         n = len(perimeter_cells)
@@ -135,7 +144,7 @@ class CombinedModel:
 
             # Calculate rates for this cell
             spread_rate = self.environment.calculate_spread_rate(topography, wind, fuel_conditions, atmospheric_conditions)
-            extinguish_rate = self.environment.calculate_extinguish_rate(natural_barriers, weather_conditions)
+            extinguish_rate = self.environment.calculate_extinguish_rate(natural_barriers, weather_conditions, extinguish_probability[cell])
             firefighting_rate = self.environment.calculate_firefighting_rate(current_phase, mobility, potency, cost)
 
             # Store effective rates for this cell
