@@ -36,20 +36,32 @@ class Environment:
     def get_wind_direction(self) -> str:
         return random.choice(self.wind_directions)
 
-    def get_fire_proximity(self, grid: np.ndarray) -> np.ndarray:
-        fire_coords = np.argwhere(grid == GridState.ON_FIRE.value)
+    def get_fire_proximity(self, grid: np.ndarray, variance=4) -> np.ndarray:
+        """Calculate the fire proximity map in the grid.
+
+        Parameters:
+            grid (np.ndarray): The grid containing the fire cells.
+            variance (float): The variance for the Gaussian-like distance metric.
+
+        Returns:
+            np.ndarray: A grid containing the fire proximity values.
+        """
+        fire_coords = np.argwhere(grid == GridState.ON_FIRE)
+
+        # Return zero proximity if there are no fire cells
         if len(fire_coords) == 0:
             return np.zeros(grid.shape)
 
         dist = np.zeros(grid.shape)
+
         for fire in fire_coords:
-            distances = np.sum((fire_coords - fire) ** 2, axis=1)
-            dist[fire[0], fire[1]] = np.sum(np.exp(-distances / (2**2)))
+            distances = np.sum((fire_coords - fire)**2, axis=1)
+            dist[fire[0], fire[1]] = np.sum(np.exp(-distances / variance))
 
-        # Normalize the distances to get probabilities
-        dist = dist / np.sum(dist)
+        # Normalize the distance map to form probabilities
+        dist /= np.sum(dist)
 
-        # Replace nan with a very small probability
+        # Replace NaN values, if any, with a very small value
         dist = np.nan_to_num(dist, nan=1e-5)
 
         return dist
@@ -140,17 +152,20 @@ class System:
 
     def get_perimeter_cells(self, grid: np.ndarray):
         """get the cells at the perimeter of the fire"""
-        perimeter_cells = []
-        for i in range(grid.shape[0]):
-            for j in range(grid.shape[1]):
-                if grid[i, j] == GridState.ON_FIRE.value:
-                    #print(f"Cell ({i}, {j}) is on fire")
-                    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                        ni, nj = i + dx, j + dy
-                        if 0 <= ni < grid.shape[0] and 0 <= nj < grid.shape[1]:
-                            if grid[ni, nj] == GridState.TREE.value:
-                                perimeter_cells.append((i, j))
-                                break
+        perimeter_cells = set()
+    
+        on_fire_cells = np.argwhere(grid == GridState.ON_FIRE)
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1), 
+                      (-1, -1), (-1, 1), (1, -1), (1, 1)] 
+    
+        for i, j in on_fire_cells:
+            for dx, dy in directions:
+                ni, nj = i + dx, j + dy
+                if 0 <= ni < grid.shape[0] and 0 <= nj < grid.shape[1]:
+                    if grid[ni, nj] == GridState.TREE:
+                        perimeter_cells.add((i, j))
+                        break
+
         return perimeter_cells
 
     def evaluate_performance(self) -> float:
