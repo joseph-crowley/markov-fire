@@ -50,10 +50,7 @@ class CombinedModel:
         # This part can be implemented in various ways. For example, you could randomly select cells to update,
         # or you could use some sort of intelligent mapping between the counts and the spatial grid.
         # For simplicity, let's assume we have a function that does this: `update_cells()`
-        optimized_grid = self.update_cells(optimized_grid, new_fire_cells, extinguished_cells, suppressed_cells, effective_rates)
-
-        # Run the spatial simulation for one step
-        new_grid = self.simulation.simulate_step(optimized_grid)
+        new_grid = self.update_cells(optimized_grid, new_fire_cells, extinguished_cells, suppressed_cells, effective_rates)
 
         return new_grid
 
@@ -77,17 +74,20 @@ class CombinedModel:
 
         # Randomly select cells to update based on weights (using indices)
         if fire_weights:
-            selected_fire_indices = np.random.choice(len(candidate_fire_cells), size=new_fire_cells, replace=False, p=normalize_weights(fire_weights))
+            sample_size = min(new_fire_cells, len(candidate_fire_cells))
+            selected_fire_indices = np.random.choice(len(candidate_fire_cells), size=sample_size, replace=False, p=normalize_weights(fire_weights))
         else:
             selected_fire_indices = []
 
         if extinguish_weights:
-            selected_extinguish_indices = np.random.choice(len(candidate_extinguish_cells), size=extinguished_cells, replace=False, p=normalize_weights(extinguish_weights))
+            sample_size = min(extinguished_cells, len(candidate_extinguish_cells))
+            selected_extinguish_indices = np.random.choice(len(candidate_extinguish_cells), size=sample_size, replace=False, p=normalize_weights(extinguish_weights))
         else:
             selected_extinguish_indices = []
 
         if suppress_weights:
-            selected_suppress_indices = np.random.choice(len(candidate_suppress_cells), size=suppressed_cells, replace=False, p=normalize_weights(suppress_weights))
+            sample_size = min(suppressed_cells, len(candidate_suppress_cells))
+            selected_suppress_indices = np.random.choice(len(candidate_suppress_cells), size=sample_size, replace=False, p=normalize_weights(suppress_weights))
         else:
             selected_suppress_indices = []
 
