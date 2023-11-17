@@ -2,6 +2,8 @@
 
 Welcome to this repository! :fire: This repo is dedicated to the exploration and interpretation of the paper "The birth-death-suppression Markov process and wildfires" by George Hulsey, David L. Alderson, and Jean Carlson. 
 
+Check out the `combined-model` branch [here](https://github.com/joseph-crowley/markov-fire/tree/combined-model) for the combined spatiotemporal fire model, using BDS temporal dynamics and stochastic spatial dynamics.
+
 ## What's Inside? :file_folder:
 
 The repository includes my notes and code, inspired by the ideas from the mentioned paper. Here's what each file in this repository serves:
