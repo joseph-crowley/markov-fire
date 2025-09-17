@@ -1,0 +1,38 @@
+{% extends 'control/base.html' %}
+{% block title %}New Scenario Version · {{ view.scenario.name }}{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-fts-sm">
+                <div class="card-body">
+<h1 class="h4 mb-3">New Version · {{ scenario.name }}</h1>
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% for field in form %}
+                            {% if field.is_hidden %}
+                                {{ field }}
+                                {% continue %}
+                            {% endif %}
+                            <div class="mb-3">
+                                <label class="form-label" for="id_{{ field.name }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <div class="form-text">{{ field.help_text }}</div>
+                                {% endif %}
+                                {% for error in field.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'control:scenario-detail' slug=scenario.slug %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Create Version</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,331 @@
+{% extends 'control/base.html' %}
+{% block title %}{{ scenario.name }} · Scenario · Fat Tailed Solutions{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'control:scenario-list' %}" class="text-decoration-none text-muted small"><i class="fa fa-arrow-left me-2"></i>Back to scenarios</a>
+            <h1 class="h3 mb-1">{{ scenario.name }}</h1>
+            <p class="text-muted mb-0">Slug: <code>{{ scenario.slug }}</code></p>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'control:scenario-version-create' slug=scenario.slug %}" class="btn btn-primary"><i class="fa fa-plus me-2"></i>New Version</a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card shadow-fts-sm h-100">
+                <div class="card-body">
+                    <h2 class="h6 text-uppercase text-muted mb-3">Overview</h2>
+                    <dl class="row small mb-0">
+                        <dt class="col-5 text-muted">Base config</dt>
+                        <dd class="col-7">{{ scenario.base_config.name }}</dd>
+                        <dt class="col-5 text-muted">Active version</dt>
+                        <dd class="col-7">
+                            {% if scenario.active_version %}
+                                v{{ scenario.active_version.version }}
+                                {% if scenario.active_version.label %}· {{ scenario.active_version.label }}{% endif %}
+                            {% else %}
+                                <span class="text-muted">None</span>
+                            {% endif %}
+                        </dd>
+                        <dt class="col-5 text-muted">Tags</dt>
+                        <dd class="col-7">
+                            {% for tag in scenario.tags.all %}
+                                <span class="badge bg-light text-dark border me-1">{{ tag.name }}</span>
+                            {% empty %}
+                                <span class="text-muted">—</span>
+                            {% endfor %}
+                        </dd>
+                        <dt class="col-5 text-muted">Metadata</dt>
+                        <dd class="col-7">
+                            {% if scenario.metadata %}
+                                <pre class="small bg-light rounded p-2 text-break">{{ scenario.metadata|safe }}</pre>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </dd>
+                        <dt class="col-5 text-muted">Status</dt>
+                        <dd class="col-7">{% if scenario.is_active %}<span class="badge text-bg-success">Active</span>{% else %}<span class="badge text-bg-secondary">Inactive</span>{% endif %}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card shadow-fts-sm h-100">
+                <div class="card-body">
+                    <h2 class="h6 text-uppercase text-muted mb-3">Description</h2>
+                    <p class="mb-0">{{ scenario.description|default:'No description provided.' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-fts-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 mb-0">Versions</h2>
+                <a href="{% url 'control:scenario-version-create' slug=scenario.slug %}" class="btn btn-outline-primary btn-sm">New Version</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col">Version</th>
+                            <th scope="col">Label</th>
+                            <th scope="col">Config</th>
+                            <th scope="col">Fuel Layer</th>
+                            <th scope="col">Moisture Layer</th>
+                            <th scope="col">Locked</th>
+                            <th scope="col">Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for version in versions %}
+                            <tr class="{% if scenario.active_version_id == version.id %}table-success{% endif %}">
+                                <td>v{{ version.version }}</td>
+                                <td>{{ version.label|default:'—' }}</td>
+                                <td>{{ version.config.name }}</td>
+                                <td>{{ version.fuel_layer.name if version.fuel_layer else '—' }}</td>
+                                <td>{{ version.moisture_layer.name if version.moisture_layer else '—' }}</td>
+                                <td>{% if version.is_locked %}<i class="fa fa-lock text-warning"></i>{% else %}<span class="text-muted">Open</span>{% endif %}</td>
+                                <td>{{ version.created_at|date:'Y-m-d H:i' }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">No versions created yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card shadow-fts-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5">Recent Calibrations</h2>
+                    <ul class="list-group list-group-flush">
+                        {% for calibration in calibrations %}
+                            <li class="list-group-item px-0">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <span class="badge text-bg-secondary me-2">{{ calibration.status|title }}</span>
+                                        v{{ calibration.scenario_version.version }} · {{ calibration.scenario_version.label|default:'Unlabeled' }}
+                                    </div>
+                                    <small class="text-muted">{{ calibration.created_at|date:'Y-m-d' }}</small>
+                                </div>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item px-0 text-muted">No calibration sessions yet.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-fts-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5">Recent Validations</h2>
+                    <ul class="list-group list-group-flush">
+                        {% for validation in validations %}
+                            <li class="list-group-item px-0">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <span class="badge text-bg-secondary me-2">{{ validation.status|title }}</span>
+                                        v{{ validation.scenario_version.version }}
+                                    </div>
+                                    <small class="text-muted">{{ validation.created_at|date:'Y-m-d' }}</small>
+                                </div>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item px-0 text-muted">No validation results yet.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-fts-sm mt-4">
+        <div class="card-body">
+            <h2 class="h5 mb-3">Analytics Snapshots</h2>
+            {% if analytics %}
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col">Run</th>
+                            <th scope="col">Version</th>
+                            <th scope="col">Total Ticks</th>
+                            <th scope="col">Max Active</th>
+                            <th scope="col">Extinguishment</th>
+                            <th scope="col">Computed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for analytics_record in analytics %}
+                            <tr>
+                                <td>{{ analytics_record.run.id }}</td>
+                                <td>
+                                    {% if analytics_record.run.scenario_version %}
+                                        v{{ analytics_record.run.scenario_version.version }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>{{ analytics_record.summary.total_ticks|default:'—' }}</td>
+                                <td>{{ analytics_record.summary.max_active_cells|default:'—' }}</td>
+                                <td>{{ analytics_record.summary.extinguishment_step|default:'—' }}</td>
+                                <td>{{ analytics_record.computed_at|date:'Y-m-d H:i' }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">Analytics not generated yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <hr class="my-4">
+            <div id="analytics-diff" class="analytics-diff">
+                <h3 class="h6 text-uppercase text-muted mb-3">Compare Runs</h3>
+                <div class="row g-3 align-items-end mb-3">
+                    <div class="col-md-5">
+                        <label class="form-label" for="run-diff-a">Run A</label>
+                        <select id="run-diff-a" class="form-select"></select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label" for="run-diff-b">Run B</label>
+                        <select id="run-diff-b" class="form-select"></select>
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button id="run-diff-button" class="btn btn-primary">Compare</button>
+                    </div>
+                </div>
+                <div id="run-diff-results" class="table-responsive d-none">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th scope="col">Metric</th>
+                                <th scope="col">Run A</th>
+                                <th scope="col">Run B</th>
+                                <th scope="col">Δ (B - A)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="run-diff-body"></tbody>
+                    </table>
+                </div>
+                <div id="run-diff-empty" class="text-muted small">Select two runs to view metric deltas.</div>
+            </div>
+            {% else %}
+            <p class="text-muted">Analytics not generated yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% if analytics %}
+{% block extra_scripts %}
+{{ block.super }}
+{{ analytics_payload|json_script:"analytics-data" }}
+<script>
+(() => {
+    const payload = JSON.parse(document.getElementById('analytics-data').textContent || '[]');
+    if (!Array.isArray(payload) || payload.length < 2) {
+        document.getElementById('run-diff-button').disabled = true;
+        return;
+    }
+
+    const runSelectA = document.getElementById('run-diff-a');
+    const runSelectB = document.getElementById('run-diff-b');
+    const diffButton = document.getElementById('run-diff-button');
+    const diffBody = document.getElementById('run-diff-body');
+    const diffResults = document.getElementById('run-diff-results');
+    const diffEmpty = document.getElementById('run-diff-empty');
+
+    const addOptions = (select) => {
+        select.innerHTML = '<option value="">— Select run —</option>';
+        payload.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.run_id;
+            option.textContent = item.label;
+            select.appendChild(option);
+        });
+    };
+
+    addOptions(runSelectA);
+    addOptions(runSelectB);
+
+    const getCsrfToken = () => {
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? match[1] : '';
+    };
+
+    const fetchDiff = async (runA, runB) => {
+        const response = await fetch(`/api/scenarios/{{ scenario.id }}/analytics_diff/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+            },
+            body: JSON.stringify({ run_a: runA, run_b: runB }),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to fetch diff');
+        }
+        return response.json();
+    };
+
+    diffButton.addEventListener('click', async () => {
+        const runA = runSelectA.value;
+        const runB = runSelectB.value;
+        if (!runA || !runB || runA === runB) {
+            diffEmpty.textContent = 'Select two distinct runs to compare.';
+            diffResults.classList.add('d-none');
+            diffEmpty.classList.remove('d-none');
+            return;
+        }
+        diffButton.disabled = true;
+        diffButton.textContent = 'Comparing…';
+        try {
+            const data = await fetchDiff(runA, runB);
+            const keys = Object.keys(data.summary_delta || {});
+            diffBody.innerHTML = '';
+            keys.sort().forEach((key) => {
+                const row = document.createElement('tr');
+                const cell = (value, cls='') => {
+                    const td = document.createElement('td');
+                    td.textContent = value ?? '—';
+                    if (cls) td.className = cls;
+                    return td;
+                };
+                const delta = data.summary_delta[key];
+                row.appendChild(cell(key));
+                row.appendChild(cell(data.summary_a[key] ?? '—'));
+                row.appendChild(cell(data.summary_b[key] ?? '—'));
+                const deltaCell = cell(delta);
+                if (typeof delta === 'number') {
+                    deltaCell.classList.add(delta > 0 ? 'text-success' : delta < 0 ? 'text-danger' : 'text-muted');
+                }
+                row.appendChild(deltaCell);
+                diffBody.appendChild(row);
+            });
+            diffResults.classList.remove('d-none');
+            diffEmpty.classList.add('d-none');
+        } catch (error) {
+            diffEmpty.textContent = 'Unable to compute diff at this time.';
+            diffEmpty.classList.remove('d-none');
+            diffResults.classList.add('d-none');
+        } finally {
+            diffButton.disabled = false;
+            diffButton.textContent = 'Compare';
+        }
+    });
+})();
+</script>
+{% endblock %}
+{% endif %}
+{% endblock %}

@@ -25,6 +25,7 @@
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'control:home' %}">Home</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.path|slice:":9" == '/configs/' %}active{% endif %}" href="{% url 'control:config-list' %}">Configurations</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path|slice:":11" == '/scenarios/' %}active{% endif %}" href="{% url 'control:scenario-list' %}">Scenarios</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.path|slice:":6" == '/runs/' %}active{% endif %}" href="{% url 'control:run-list' %}">Runs</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'control:run-create' %}">Launch</a></li>
                     {% if request.user.is_authenticated %}

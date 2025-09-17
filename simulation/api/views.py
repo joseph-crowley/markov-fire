@@ -3,10 +3,30 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from simulation.models import SimulationConfig, SimulationRun, SimulationTick
+from simulation.models import (
+    SimulationConfig,
+    SimulationRun,
+    SimulationTick,
+    Scenario,
+    ScenarioVersion,
+    ScenarioTag,
+    FuelLayer,
+    MoistureLayer,
+    SimulationAnalytics,
+)
 from simulation.tasks import run_simulation_task
 
-from .serializers import SimulationConfigSerializer, SimulationRunSerializer, SimulationTickSerializer
+from .serializers import (
+    SimulationConfigSerializer,
+    SimulationRunSerializer,
+    SimulationTickSerializer,
+    ScenarioSerializer,
+    ScenarioVersionSerializer,
+    ScenarioTagSerializer,
+    FuelLayerSerializer,
+    MoistureLayerSerializer,
+    AnalyticsDiffSerializer,
+)
 
 
 class SimulationConfigViewSet(viewsets.ModelViewSet):
@@ -19,7 +39,13 @@ class SimulationConfigViewSet(viewsets.ModelViewSet):
 
 
 class SimulationRunViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin):
-    queryset = SimulationRun.objects.all().select_related('config', 'config__created_by')
+    queryset = SimulationRun.objects.all().select_related(
+        'config',
+        'config__created_by',
+        'scenario_version',
+        'analytics',
+        'live_metrics',
+    ).prefetch_related('validation_results', 'checkpoints')
     serializer_class = SimulationRunSerializer
     permission_classes = [IsAuthenticated]
 
@@ -48,3 +74,67 @@ class SimulationRunViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixin
         ticks = run.ticks.filter(tick_index__gte=start).order_by('tick_index')[:limit]
         serializer = SimulationTickSerializer(ticks, many=True)
         return Response(serializer.data)
+
+
+class ScenarioViewSet(viewsets.ModelViewSet):
+    queryset = Scenario.objects.all().select_related('base_config', 'active_version').prefetch_related('tags')
+    serializer_class = ScenarioSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def analytics_diff(self, request, pk=None):
+        scenario = self.get_object()
+        serializer = AnalyticsDiffSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        run_a_id = serializer.validated_data['run_a']
+        run_b_id = serializer.validated_data['run_b']
+
+        analytics_qs = SimulationAnalytics.objects.filter(run__scenario_version__scenario=scenario)
+        try:
+            analytics_a = analytics_qs.select_related('run').get(run__id=run_a_id)
+            analytics_b = analytics_qs.select_related('run').get(run__id=run_b_id)
+        except SimulationAnalytics.DoesNotExist:
+            return Response({'detail': 'Analytics not found for one or both runs.'}, status=status.HTTP_404_NOT_FOUND)
+
+        summary_a = analytics_a.summary or {}
+        summary_b = analytics_b.summary or {}
+        keys = set(summary_a.keys()) | set(summary_b.keys())
+        delta = {key: float(summary_b.get(key, 0) - summary_a.get(key, 0)) for key in keys}
+
+        return Response({
+            'run_a': str(run_a_id),
+            'run_b': str(run_b_id),
+            'summary_a': summary_a,
+            'summary_b': summary_b,
+            'summary_delta': delta,
+        })
+
+
+class ScenarioVersionViewSet(viewsets.ModelViewSet):
+    queryset = ScenarioVersion.objects.all().select_related('scenario', 'config', 'fuel_layer', 'moisture_layer')
+    serializer_class = ScenarioVersionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class ScenarioTagViewSet(viewsets.ModelViewSet):
+    queryset = ScenarioTag.objects.all()
+    serializer_class = ScenarioTagSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class FuelLayerViewSet(viewsets.ModelViewSet):
+    queryset = FuelLayer.objects.all()
+    serializer_class = FuelLayerSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class MoistureLayerViewSet(viewsets.ModelViewSet):
+    queryset = MoistureLayer.objects.all()
+    serializer_class = MoistureLayerSerializer
+    permission_classes = [IsAuthenticated]

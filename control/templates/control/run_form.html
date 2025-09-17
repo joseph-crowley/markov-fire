@@ -27,6 +27,22 @@
                                 {% endfor %}
                             </div>
                             <div class="mb-4">
+                                <label class="form-label" for="{{ form.scenario_version.id_for_label }}">Scenario Version (optional)</label>
+                                {{ form.scenario_version }}
+                                {% for error in form.scenario_version.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">Associate the run with a saved scenario version for analytics lineage.</div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label" for="{{ form.resume_from.id_for_label }}">Resume From Checkpoint (optional)</label>
+                                {{ form.resume_from }}
+                                {% for error in form.resume_from.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">Start from a saved checkpoint instead of seeding a fresh ignition.</div>
+                            </div>
+                            <div class="mb-4">
                                 <label class="form-label" for="{{ form.seed.id_for_label }}">Seed (optional)</label>
                                 {{ form.seed }}
                                 {% for error in form.seed.errors %}

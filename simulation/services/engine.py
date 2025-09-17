@@ -12,6 +12,12 @@ from .parameters import (
     SimulationParameters,
     TemporalParameters,
     EnvironmentParameters,
+    PhysicsParameters,
+)
+from .ros import (
+    RateOfSpreadRequest,
+    RothermelCalculator,
+    build_ros_probability,
 )
 
 
@@ -124,8 +130,9 @@ class WildfireSpreadProcess:
         self.system_size = system_size
         self.rng = rng
 
-    def simulate_step(self, current_population: int) -> Tuple[int, int, int]:
-        spread = self.rng.poisson(self.params.spread_rate * current_population)
+    def simulate_step(self, current_population: int, spread_multiplier: float = 1.0) -> Tuple[int, int, int]:
+        spread_rate = max(self.params.spread_rate * spread_multiplier, 0.0)
+        spread = self.rng.poisson(spread_rate * current_population)
         extinguish = self.rng.poisson(self.params.extinguish_rate * current_population)
         suppression = self.rng.poisson(self.params.firefighting_rate * current_population)
         return int(spread), int(extinguish), int(suppression)
@@ -136,6 +143,12 @@ class WildfireSimulator:
         self.params = params
         self.rng = np.random.default_rng(params.stochastic_seed)
         self.environment = EnvironmentModel(params.environment)
+        self.physics: PhysicsParameters = params.spatial.physics
+        self.ros_calculator: Optional[RothermelCalculator] = (
+            RothermelCalculator() if self.physics.enabled else None
+        )
+        self._last_ros_result = None
+        self._last_ros_distribution: Optional[Dict[str, float]] = None
         self.temporal = WildfireSpreadProcess(params.temporal, params.grid_size ** 2, self.rng)
         self.grid = self._initial_grid()
         self.population = params.temporal.initial_population
@@ -146,10 +159,16 @@ class WildfireSimulator:
     def _initial_grid(self) -> np.ndarray:
         size = self.params.grid_size
         tree_probability = self.params.spatial.ignition_density
+        probabilities = np.array([self.params.spatial.empty_density, tree_probability], dtype=float)
+        total = probabilities.sum()
+        if total <= 0:
+            probabilities = np.array([0.5, 0.5])
+        else:
+            probabilities = probabilities / total
         grid = self.rng.choice(
             [GridState.EMPTY.value, GridState.TREE.value],
             size=(size, size),
-            p=[self.params.spatial.empty_density, tree_probability],
+            p=probabilities,
         )
         return grid.astype(np.uint8)
 
@@ -195,6 +214,85 @@ class WildfireSimulator:
             total = proximity.sum()
         return proximity / total
 
+    @staticmethod
+    def _cardinal_to_degrees(cardinal: str) -> float:
+        mapping = {
+            'N': 0.0,
+            'NE': 45.0,
+            'E': 90.0,
+            'SE': 135.0,
+            'S': 180.0,
+            'SW': 225.0,
+            'W': 270.0,
+            'NW': 315.0,
+        }
+        return mapping.get(cardinal, 0.0)
+
+    def _angle_to_cardinal(self, angle_deg: float) -> str:
+        directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+        index = int(((angle_deg + 22.5) % 360.0) / 45.0)
+        return directions[index]
+
+    def _direction_from_center(self, center: np.ndarray, cell: Tuple[int, int]) -> str:
+        dy = cell[0] - center[0]
+        dx = cell[1] - center[1]
+        if abs(dx) < 1e-6 and abs(dy) < 1e-6:
+            return 'N'
+        angle = math.degrees(math.atan2(-dy, dx)) % 360.0
+        angle = (90.0 - angle) % 360.0
+        return self._angle_to_cardinal(angle)
+
+    def _compute_ros_context(
+        self,
+        wind_direction: str,
+        current_population: int,
+    ) -> Tuple[Optional[Dict[str, float]], float]:
+        if not self.ros_calculator:
+            return None, 1.0
+
+        physics = self.physics
+        env = self.environment.params
+
+        wind_speed = physics.wind_speed_ms if physics.wind_speed_ms > 0 else float(np.linalg.norm(env.wind_vector))
+        wind_dir_deg = physics.wind_direction_deg if wind_direction is None else self._cardinal_to_degrees(wind_direction)
+
+        request = RateOfSpreadRequest(
+            fuel_model=physics.fuel_model,
+            wind_speed_ms=float(wind_speed),
+            wind_direction_deg=float(wind_dir_deg),
+            slope_degrees=float(physics.slope_degrees),
+            aspect_degrees=float(physics.aspect_degrees),
+            moisture_dead=float(physics.moisture_dead),
+            moisture_live=float(max(physics.moisture_live, physics.moisture_dead)),
+            air_temperature_c=float(env.temperature),
+            wind_reduction_factor=float(physics.wind_reduction_factor),
+            fuel_moisture_adjustment=float(physics.fuel_moisture_adjustment),
+            crown_fire=self._crown_fire_active(current_population),
+        )
+
+        result, distribution = build_ros_probability(
+            self.ros_calculator,
+            request,
+            cell_size_m=max(float(physics.cell_size_m), 1.0),
+            timestep_minutes=max(float(physics.timestep_minutes), 0.1),
+        )
+
+        self._last_ros_result = result
+        self._last_ros_distribution = distribution
+
+        spread_multiplier = self.ros_calculator.spread_multiplier(
+            request,
+            baseline_rate=self.params.temporal.spread_rate,
+        )
+
+        return distribution, spread_multiplier
+
+    def _crown_fire_active(self, current_population: int) -> bool:
+        if self.physics.crown_fire:
+            return True
+        threshold = int(self.params.grid_size ** 2 * 0.15)
+        return current_population >= max(threshold, 1)
+
     def _apply_resources(self, proximity: np.ndarray) -> None:
         for resource in self.params.resources:
             r_type = resource.get('type')
@@ -238,14 +336,27 @@ class WildfireSimulator:
             if 0 <= ni < self.params.grid_size and 0 <= nj < self.params.grid_size:
                 yield ni, nj
 
-    def _spread_fire(self, new_fire_cells: int, proximity: np.ndarray, wind_direction: str) -> int:
+    def _spread_fire(
+        self,
+        new_fire_cells: int,
+        proximity: np.ndarray,
+        wind_direction: str,
+        directional_bias: Optional[Dict[str, float]] = None,
+        fire_cells: Optional[np.ndarray] = None,
+    ) -> int:
         trees = self._tree_cells()
         if len(trees) == 0 or new_fire_cells <= 0:
             return 0
+        center = None
+        if directional_bias and fire_cells is not None and len(fire_cells) > 0:
+            center = np.mean(fire_cells, axis=0)
         weights = []
         for i, j in trees:
             score = proximity[i, j]
-            if self._aligned_with_wind((i, j), wind_direction):
+            if directional_bias and center is not None:
+                cardinal = self._direction_from_center(center, (i, j))
+                score *= directional_bias.get(cardinal, 1.0)
+            elif self._aligned_with_wind((i, j), wind_direction):
                 score *= 1.5
             weights.append(score)
         weights = np.array(weights, dtype=float)
@@ -303,20 +414,31 @@ class WildfireSimulator:
             self.grid[i, j] = GridState.BURNED.value
 
     def run(self) -> Generator[TickResult, None, None]:
-        current_population = max(1, int(np.sum(self.grid == GridState.ON_FIRE.value)))
         for tick in range(self.params.time_steps):
-            spread, extinguish, suppress = self.temporal.simulate_step(current_population)
+            active_cells = int(np.sum(self.grid == GridState.ON_FIRE.value))
+            current_population = active_cells
+
             proximity = self._fire_proximity(self.params.spatial.variance)
             wind_direction = self.environment.get_wind_direction(self.rng, self.params.spatial.wind_bias)
+            directional_bias, spread_multiplier = self._compute_ros_context(wind_direction, active_cells)
+
+            spread, extinguish, suppress = self.temporal.simulate_step(
+                current_population,
+                spread_multiplier=spread_multiplier,
+            )
+
             self._apply_resources(proximity)
 
-            # Determine which fire cells extinguish or suppress
             on_fire_cells = np.argwhere(self.grid == GridState.ON_FIRE.value)
             extinguish_count = min(extinguish, len(on_fire_cells))
             suppress_count = min(suppress, len(on_fire_cells) - extinguish_count)
-            selections = self.rng.choice(len(on_fire_cells), size=extinguish_count + suppress_count, replace=False) if len(on_fire_cells) > 0 else []
-            extinguishments = []
-            suppressions = []
+            selections = (
+                self.rng.choice(len(on_fire_cells), size=extinguish_count + suppress_count, replace=False)
+                if len(on_fire_cells) > 0 and (extinguish_count + suppress_count) > 0
+                else []
+            )
+            extinguishments: List[Tuple[int, int]] = []
+            suppressions: List[Tuple[int, int]] = []
             if len(on_fire_cells) > 0 and len(selections) > 0:
                 extinguish_indices = selections[:extinguish_count]
                 suppress_indices = selections[extinguish_count:extinguish_count + suppress_count]
@@ -326,29 +448,35 @@ class WildfireSimulator:
             self._progress_existing_fire()
             self._update_fire_cells(extinguishments, suppressions)
 
-            added = self._spread_fire(spread, proximity, wind_direction)
+            added = self._spread_fire(
+                spread,
+                proximity,
+                wind_direction,
+                directional_bias=directional_bias,
+                fire_cells=on_fire_cells,
+            )
 
-            current_population = int(np.sum(self.grid == GridState.ON_FIRE.value))
+            active_cells = int(np.sum(self.grid == GridState.ON_FIRE.value))
             burned_cells = int(np.sum((self.grid == GridState.BURNED.value) | (self.grid == GridState.PREVIOUSLY_BURNED.value)))
             suppressed_cells = int(np.sum((self.grid == GridState.SUPPRESSED.value) | (self.grid == GridState.PREVIOUSLY_SUPPRESSED.value)))
-            footprint = burned_cells + current_population + suppressed_cells
+            footprint = burned_cells + active_cells + suppressed_cells
 
-            if current_population == 0 and self.extinguishment_time is None:
+            if active_cells == 0 and self.extinguishment_time is None:
                 self.extinguishment_time = tick
 
             yield TickResult(
                 index=tick,
-                active_cells=current_population,
+                active_cells=active_cells,
                 burned_cells=burned_cells,
                 suppressed_cells=suppressed_cells,
                 footprint=footprint,
-                population=current_population,
-                extinguished=current_population == 0,
+                population=active_cells,
+                extinguished=active_cells == 0,
                 grid=self.grid.copy(),
                 spread=added,
                 extinguish=len(extinguishments),
                 suppress=len(suppressions),
             )
 
-            if current_population == 0:
+            if active_cells == 0:
                 break

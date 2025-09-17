@@ -11,4 +11,8 @@ urlpatterns = [
     path('runs/', views.SimulationRunListView.as_view(), name='run-list'),
     path('runs/new/', views.SimulationRunCreateView.as_view(), name='run-create'),
     path('runs/<uuid:pk>/', views.SimulationRunDetailView.as_view(), name='run-detail'),
+    path('scenarios/', views.ScenarioListView.as_view(), name='scenario-list'),
+    path('scenarios/new/', views.ScenarioCreateView.as_view(), name='scenario-create'),
+    path('scenarios/<slug:slug>/', views.ScenarioDetailView.as_view(), name='scenario-detail'),
+    path('scenarios/<slug:slug>/versions/new/', views.ScenarioVersionCreateView.as_view(), name='scenario-version-create'),
 ]

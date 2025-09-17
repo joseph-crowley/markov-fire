@@ -11,6 +11,25 @@ class TemporalParameters:
 
 
 @dataclass
+class PhysicsParameters:
+    """Controls for the physics-backed rate-of-spread module."""
+
+    enabled: bool = False
+    fuel_model: str = 'GR1'
+    cell_size_m: float = 30.0
+    timestep_minutes: float = 1.0
+    wind_speed_ms: float = 3.0
+    wind_direction_deg: float = 270.0
+    slope_degrees: float = 5.0
+    aspect_degrees: float = 180.0
+    moisture_dead: float = 0.08
+    moisture_live: float = 0.9
+    wind_reduction_factor: float = 0.4
+    fuel_moisture_adjustment: float = 1.0
+    crown_fire: bool = False
+
+
+@dataclass
 class SpatialParameters:
     ignition_density: float = 0.9  # proportion of trees initially
     empty_density: float = 0.1
@@ -25,6 +44,7 @@ class SpatialParameters:
         'W': 1.0,
         'NW': 1.0,
     })
+    physics: PhysicsParameters = field(default_factory=PhysicsParameters)
 
 
 @dataclass
@@ -71,11 +91,29 @@ def build_parameters(config_payload: Dict) -> SimulationParameters:
         initial_population=temporal_raw.get('initial_population', 10),
     )
 
+    physics_raw = spatial_raw.get('physics', {})
+    physics = PhysicsParameters(
+        enabled=physics_raw.get('enabled', False),
+        fuel_model=physics_raw.get('fuel_model', 'GR1'),
+        cell_size_m=physics_raw.get('cell_size_m', 30.0),
+        timestep_minutes=physics_raw.get('timestep_minutes', 1.0),
+        wind_speed_ms=physics_raw.get('wind_speed_ms', 3.0),
+        wind_direction_deg=physics_raw.get('wind_direction_deg', 270.0),
+        slope_degrees=physics_raw.get('slope_degrees', environment_raw.get('slope', 0.1) * 100 if environment_raw.get('slope', 0.1) < 1 else environment_raw.get('slope', 0.1)),
+        aspect_degrees=physics_raw.get('aspect_degrees', 180.0),
+        moisture_dead=physics_raw.get('moisture_dead', environment_raw.get('moisture', 0.2)),
+        moisture_live=physics_raw.get('moisture_live', environment_raw.get('moisture', 0.2) * 5),
+        wind_reduction_factor=physics_raw.get('wind_reduction_factor', 0.4),
+        fuel_moisture_adjustment=physics_raw.get('fuel_moisture_adjustment', 1.0),
+        crown_fire=physics_raw.get('crown_fire', False),
+    )
+
     spatial = SpatialParameters(
         ignition_density=spatial_raw.get('ignition_density', 0.9),
         empty_density=spatial_raw.get('empty_density', 0.1),
         variance=spatial_raw.get('variance', 4.0),
         wind_bias=spatial_raw.get('wind_bias', SpatialParameters().wind_bias),
+        physics=physics,
     )
 
     environment = EnvironmentParameters(

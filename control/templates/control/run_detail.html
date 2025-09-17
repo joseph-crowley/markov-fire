@@ -96,9 +96,38 @@
                             <dd class="col-6 text-end">{{ run.total_ticks }}</dd>
                             <dt class="col-6">Extinguishment step</dt>
                             <dd class="col-6 text-end">{{ run.extinguishment_step|default:'—' }}</dd>
+                            <dt class="col-6">Scenario version</dt>
+                            <dd class="col-6 text-end">
+                                {% if scenario_version %}
+                                    <a href="{% url 'control:scenario-detail' slug=scenario_version.scenario.slug %}" class="text-decoration-none">
+                                        {{ scenario_version.scenario.name }} · v{{ scenario_version.version }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </dd>
+                            <dt class="col-6">Resumed from</dt>
+                            <dd class="col-6 text-end">{% if resume_from %}Tick {{ resume_from.tick_index }}{% else %}<span class="text-muted">—</span>{% endif %}</dd>
                         </dl>
                     </div>
                 </div>
+                {% if analytics %}
+                <div class="card shadow-fts-lg mb-4">
+                    <div class="card-body">
+                        <h2 class="h5">Analytics Snapshot</h2>
+                        <dl class="row small mb-0">
+                            <dt class="col-6">Total ticks</dt>
+                            <dd class="col-6 text-end">{{ analytics.summary.total_ticks }}</dd>
+                            <dt class="col-6">Max active</dt>
+                            <dd class="col-6 text-end">{{ analytics.summary.max_active_cells }}</dd>
+                            <dt class="col-6">Final footprint</dt>
+                            <dd class="col-6 text-end">{{ analytics.summary.final_footprint }}</dd>
+                            <dt class="col-6">Computed</dt>
+                            <dd class="col-6 text-end">{{ analytics.computed_at|date:'Y-m-d H:i' }}</dd>
+                        </dl>
+                    </div>
+                </div>
+                {% endif %}
                 <div class="card timeline-card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -112,6 +141,50 @@
                 </div>
             </div>
         </div>
+        {% if checkpoints %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-fts-lg">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 class="h5 mb-0">Checkpoints</h2>
+                            <a href="{% url 'control:run-create' %}?config={{ config.id }}{% if scenario_version %}&amp;scenario_version={{ scenario_version.id }}{% endif %}" class="btn btn-outline-primary btn-sm">New run from latest</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Tick</th>
+                                        <th scope="col">Active</th>
+                                        <th scope="col">Footprint</th>
+                                        <th scope="col">Created</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for checkpoint in checkpoints %}
+                                    <tr>
+                                        <td>{{ checkpoint.tick_index }}</td>
+                                        <td>{{ checkpoint.metadata.active_cells|default:'—' }}</td>
+                                        <td>{{ checkpoint.metadata.burned_cells|default:'—' }}</td>
+                                        <td>{{ checkpoint.created_at|date:'Y-m-d H:i' }}</td>
+                                        <td>
+                                            <a href="{% url 'control:run-create' %}?config={{ config.id }}&amp;checkpoint={{ checkpoint.id }}{% if scenario_version %}&amp;scenario_version={{ scenario_version.id }}{% endif %}" class="btn btn-sm btn-primary">Resume here</a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">No checkpoints recorded yet.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </section>
 {% endblock %}
