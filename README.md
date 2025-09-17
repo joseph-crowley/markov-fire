@@ -1,56 +1,90 @@
-# Combined Wildfire Spread Model: Temporal and Spatial Dynamics
+# Fat Tailed Solutions — Markov Fire Portal
 
-Welcome to this repository! :fire: This repository is dedicated to the study and simulation of wildfire spread using both temporal and spatial models. It is inspired by various models that aim to understand the complex nature of wildfires and how they spread over time and space.
+A full-stack Django application from Fat Tailed Solutions for configuring, running, and visualising stochastic wildfire simulations that blend temporal Markov processes with spatial fire-spread dynamics. The portal provides:
 
-## What's Inside? :file_folder:
+- Rich configuration management for simulation presets and parameter tuning
+- Background execution via Celery with persisted tick-by-tick results in PostgreSQL
+- Real-time visualisation of the fire grid and key metrics using Django Channels and WebSockets
+- REST API endpoints for external automation and integrations
+- Docker Compose stack with Django (ASGI), Celery worker/beat, Redis, and PostgreSQL
 
-Here's what each file in this repository serves:
+## Features
 
-- `./temporal_model.py`: Contains the `WildfireSpreadProcess` class, which models the temporal dynamics of a wildfire spread.
-  
-- `./spatial_model.py`: Contains classes and functions for the spatial model, including the `Environment`, `System`, and `Optimization` classes.
-  
-- `./combined_model.py`: Merges the temporal and spatial models into a unified model.
-  
-- `./visualization.py`: A Python script for visualizing the wildfire spread on a grid over time.
+- **Configurable Engines**: Temporal spread, extinguish, and suppression rates combined with spatial grid dynamics, environmental modifiers, and firefighting resources.
+- **Live Streaming**: WebSocket feed broadcasts every simulation tick to all connected clients; dashboard renders heatmap grid and charts in real time.
+- **Persistence**: Simulation inputs, runs, and individual ticks stored for replay and analytics.
+- **Background Tasks**: Celery workers execute simulations asynchronously; progress and completion events push to clients immediately.
+- **REST API**: Create configurations, schedule runs, and fetch tick history programmatically.
 
-## Diving into the Combined Model :fire:
-
-The `combined_model.py` file contains the `CombinedModel` class, which integrates both temporal and spatial aspects of wildfire spread. This allows the model to be more versatile and realistic, accommodating various conditions and scenarios. 
-
-The temporal model, defined in `temporal_model.py`, follows a continuous-time Markov process, allowing for various rates like spread rate, extinguish rate, and firefighting rate. 
-
-The spatial model, defined in `spatial_model.py`, utilizes a grid to represent the environment and employs stochastic methods to simulate the spread of fire across the grid.
-
-The visualization in `visualization.py` provides a graphical representation of the wildfire spread over time, making it easier to understand the model's behavior.
-
-## Getting Started :runner:
-
-To get started, clone this repository:
+## Quick Start (Docker)
 
 ```bash
-git clone https://github.com/joseph-crowley/combined-wildfire-model.git
-cd combined-wildfire-model
+docker compose up --build
 ```
 
-Ensure you have Python 3.6 or later installed. Verify by running:
+Set `APP_PORT` in `.env` (defaults to `8000`) to control the exposed port. The provided `.env` sets it to `8001`; visit `http://localhost:8001/` (or your chosen port) and log in with a Django superuser (create one via `docker compose run --rm web python manage.py createsuperuser`).
+
+From the homepage you can:
+
+- Explore the Fat Tailed Solutions overview describing the project mission and workflow.
+- Jump straight to “Launch a Simulation” or “Browse Configurations” via CTA buttons.
+- Access navigation links for configurations, active runs, and new run creation.
+
+## Local Development
 
 ```bash
-python --version
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+export DJANGO_DB_ENGINE=django.db.backends.sqlite3
+python manage.py migrate
+python manage.py runserver
 ```
 
-Install required Python libraries:
+Optional: start Celery and Redis for live streaming locally.
 
 ```bash
-pip install numpy matplotlib
+redis-server
+celery -A markov_fire_portal worker --loglevel=info
 ```
 
-Run the visualization script to see the model in action:
+## Architecture Overview
+
+- `simulation/` – domain models, Celery tasks, REST API, and the wildfire simulation engine (`services/engine.py`).
+- `control/` – Django views/templates for configuration and monitoring dashboards.
+- `streaming/` – Django Channels consumer that multiplexes simulation ticks to WebSocket clients.
+- `markov_fire_portal/` – project settings, URLs, ASGI/WSGI entrypoints, Celery integration.
+
+## REST Endpoints
+
+- `POST /api/configs/` – create new configuration (authenticated).
+- `POST /api/runs/` – schedule a run for a configuration (authenticated).
+- `GET /api/runs/{id}/ticks?from=0&limit=200` – retrieve stored tick metrics.
+
+## WebSocket Protocol
+
+Connect to `ws://<host>/ws/simulations/<run_id>/`.
+
+Messages:
+- `{"type": "tick", ...}` – every new tick with grid state and metrics.
+- `{"type": "completed", ...}` – run finished.
+- `{"type": "failed", "error": "..."}` – run aborted.
+- Send `{"type": "catchup", "from": 0}` to request persisted history.
+
+## Testing
 
 ```bash
-python visualization.py
+pytest
 ```
 
-## Contributing :handshake:
+(or `python manage.py test` after installing `pytest-django` or using Django's test runner).
 
-Contributions are always welcome! Feel free to raise issues, propose enhancements, or improve the code/documentation via pull requests. Let's collaborate to improve our understanding of wildfires!
+## Roadmap
+
+- Geospatial overlays (wind fields, terrain data)
+- Advanced resource strategies and multi-run analytics
+- Export & replay tools for historical simulations
+
+## License
+
+MIT

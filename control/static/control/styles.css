@@ -1,0 +1,18 @@
+body {
+    background: #f5f7fa;
+}
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+.simulation-grid {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    border: 1px solid #ccc;
+}
+.chart-container {
+    position: relative;
+    height: 320px;
+}

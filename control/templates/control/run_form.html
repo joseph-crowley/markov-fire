@@ -1,0 +1,48 @@
+{% extends 'control/base.html' %}
+
+{% block title %}Launch Simulation | Fat Tailed Solutions{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="text-center mb-4">
+                    <span class="badge badge-fts mb-2">Execution</span>
+                    <h1 class="h3">Launch Simulation Run</h1>
+                    <p class="text-muted">Select a configuration, optionally set a seed, and stream live results immediately.</p>
+                </div>
+                <div class="card shadow-fts-lg">
+                    <div class="card-body p-4 p-lg-5">
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                            {% endif %}
+                            <div class="mb-4">
+                                <label class="form-label" for="{{ form.config.id_for_label }}">Configuration</label>
+                                {{ form.config }}
+                                {% for error in form.config.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label" for="{{ form.seed.id_for_label }}">Seed (optional)</label>
+                                {{ form.seed }}
+                                {% for error in form.seed.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">Provide a numeric seed to reproduce previous runs.</div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary" type="submit"><i class="fas fa-burn me-2"></i>Launch run</button>
+                                <a class="btn btn-outline-primary" href="{% url 'control:run-list' %}">Back to runs</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,51 @@
+version: '3.9'
+services:
+  web:
+    build: .
+    command: sh ./entrypoint.sh
+    volumes:
+      - .:/app
+    ports:
+      - "${APP_PORT:-8000}:${APP_PORT:-8000}"
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+  worker:
+    build: .
+    command: celery -A markov_fire_portal worker --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+  beat:
+    build: .
+    command: celery -A markov_fire_portal beat --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: markov_fire
+      POSTGRES_USER: markov_fire
+      POSTGRES_PASSWORD: markov_fire
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

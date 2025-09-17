@@ -1,0 +1,369 @@
+/* ==========================================================================
+   Fat Tailed Solutions - Bootstrap 5 brand skin
+   Load order: bootstrap.min.css -> app.css
+   ========================================================================== */
+
+/* Optional webfont imports (comment out if self-hosting) */
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans:wght@400;500;600&display=swap");
+
+/* --- Brand custom properties (raw tokens) -------------------------------- */
+:root {
+  /* Canonical FTS tokens */
+  --fat-bg: #F2F2F2;
+  --fat-primary-blue: #034C8C;
+  --fat-deep-blue: #012840;
+  --fat-accent-blue: #41AEF2;
+  --fat-dark: #0D0D0D;
+
+  /* Typographic stacks */
+  --fts-font-ui: "Montserrat", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --fts-font-body: "Open Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --fts-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono";
+
+  /* Scale, radius, elevation */
+  --fts-spacing: 4px;
+  --fts-radius-sm: 4px;
+  --fts-radius-md: 8px;
+  --fts-radius-lg: 12px;
+  --fts-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --fts-shadow-md: 0 4px 10px rgba(0, 0, 0, 0.08);
+  --fts-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* Focus ring */
+  --fts-ring: 0 0 0 3px color-mix(in srgb, var(--fat-accent-blue) 40%, transparent);
+}
+
+/* --- Bootstrap variable overrides ---------------------------------------- */
+:root {
+  /* Body */
+  --bs-body-bg: var(--fat-bg);
+  --bs-body-color: var(--fat-dark);
+  --bs-body-font-family: var(--fts-font-body);
+  --bs-body-line-height: 1.55;
+
+  /* Headings */
+  --bs-heading-color: var(--fat-deep-blue);
+
+  /* Brand semantics */
+  --bs-primary: var(--fat-primary-blue);
+  --bs-secondary: var(--fat-accent-blue);
+  --bs-info: var(--fat-accent-blue);
+  --bs-dark: var(--fat-dark);
+  --bs-light: var(--fat-bg);
+
+  /* Links */
+  --bs-link-color: var(--fat-primary-blue);
+  --bs-link-hover-color: color-mix(in srgb, var(--fat-primary-blue) 85%, white);
+
+  /* Border + inputs */
+  --bs-border-color: color-mix(in srgb, var(--fat-deep-blue) 15%, white);
+  --bs-border-radius: var(--fts-radius-md);
+  --bs-border-radius-sm: var(--fts-radius-sm);
+  --bs-border-radius-lg: var(--fts-radius-lg);
+
+  /* Shadows */
+  --bs-box-shadow-sm: var(--fts-shadow-sm);
+  --bs-box-shadow: var(--fts-shadow-md);
+  --bs-box-shadow-lg: var(--fts-shadow-lg);
+
+  /* Focus ring */
+  --bs-focus-ring-color: color-mix(in srgb, var(--fat-accent-blue) 35%, transparent);
+}
+
+/* --- Dark theme (opt-in via .theme-dark on <html> or <body>) ------------- */
+.theme-dark {
+  --bs-body-bg: #0d0f12;
+  --bs-body-color: #f1f3f5;
+
+  --bs-heading-color: #eef2f6;
+
+  --bs-primary: color-mix(in srgb, var(--fat-primary-blue) 75%, white);
+  --bs-secondary: var(--fat-accent-blue);
+  --bs-info: var(--fat-accent-blue);
+  --bs-dark: #e6e8ea;
+  --bs-light: #15191e;
+
+  --bs-link-color: color-mix(in srgb, var(--fat-accent-blue) 85%, white);
+  --bs-link-hover-color: color-mix(in srgb, var(--fat-accent-blue) 70%, white);
+
+  --bs-border-color: color-mix(in srgb, var(--fat-primary-blue) 25%, #0d0f12);
+  --bs-focus-ring-color: color-mix(in srgb, var(--fat-accent-blue) 45%, transparent);
+}
+
+/* --- Typography rules ---------------------------------------------------- */
+h1,
+.h1,
+h2,
+.h2,
+h3,
+.h3 {
+  font-family: var(--fts-font-ui);
+  letter-spacing: -0.01em;
+}
+
+h1,
+.h1 {
+  line-height: 1.2;
+}
+
+h2,
+.h2 {
+  line-height: 1.25;
+}
+
+h3,
+.h3 {
+  line-height: 1.3;
+}
+
+.lead {
+  color: color-mix(in srgb, var(--fat-deep-blue) 85%, black);
+}
+
+.fts-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  font-family: var(--fts-font-ui);
+  color: color-mix(in srgb, var(--fat-primary-blue) 80%, black);
+  font-size: 0.85rem;
+}
+
+/* --- Buttons ------------------------------------------------------------- */
+.btn {
+  font-family: var(--fts-font-ui);
+  border-radius: var(--fts-radius-md);
+}
+
+.btn-primary {
+  box-shadow: var(--fts-shadow-sm);
+}
+
+.btn-primary:hover {
+  background-color: color-mix(in srgb, var(--fat-primary-blue) 90%, white);
+  border-color: color-mix(in srgb, var(--fat-primary-blue) 90%, white);
+}
+
+.btn-primary:focus {
+  box-shadow: var(--fts-ring);
+}
+
+.btn-secondary {
+  color: #0d0d0d;
+  background-color: color-mix(in srgb, var(--fat-accent-blue) 20%, white);
+  border-color: color-mix(in srgb, var(--fat-accent-blue) 40%, white);
+}
+
+.btn-secondary:hover {
+  background-color: color-mix(in srgb, var(--fat-accent-blue) 40%, white);
+}
+
+.btn-outline-primary {
+  border-color: var(--fat-primary-blue);
+  color: var(--fat-primary-blue);
+}
+
+.btn-outline-primary:hover {
+  background-color: color-mix(in srgb, var(--fat-primary-blue) 12%, white);
+  color: var(--fat-primary-blue);
+}
+
+/* --- Cards, nav, tables -------------------------------------------------- */
+.card {
+  border-radius: var(--fts-radius-lg);
+  box-shadow: var(--fts-shadow-sm);
+  border: none;
+  background-color: #fff;
+}
+
+.card-title {
+  font-family: var(--fts-font-ui);
+  font-weight: 600;
+}
+
+.table thead th {
+  color: var(--fat-deep-blue);
+  font-family: var(--fts-font-ui);
+  font-weight: 600;
+}
+
+.navbar {
+  box-shadow: var(--fts-shadow-sm);
+  background-color: #ffffff;
+  border-bottom: 1px solid color-mix(in srgb, var(--fat-deep-blue) 10%, white);
+}
+
+.navbar-brand {
+  font-family: var(--fts-font-ui);
+  font-weight: 600;
+  color: var(--fat-primary-blue);
+}
+
+.fts-logo {
+  display: inline-block;
+  height: 28px;
+  width: auto;
+}
+
+.fts-logo--xl {
+  height: 48px;
+  width: auto;
+}
+
+.navbar-brand:hover {
+  color: var(--fat-primary-blue);
+}
+
+.nav-link {
+  font-weight: 500;
+  color: var(--fat-deep-blue);
+}
+
+.nav-link.active,
+.nav-link:hover {
+  color: var(--fat-primary-blue);
+}
+
+.footer {
+  background-color: #ffffff;
+  border-top: 1px solid color-mix(in srgb, var(--fat-deep-blue) 10%, white);
+}
+
+/* --- Forms --------------------------------------------------------------- */
+.form-control,
+.form-select,
+.form-check-input {
+  border-radius: var(--fts-radius-md);
+  border-color: color-mix(in srgb, var(--fat-deep-blue) 12%, white);
+  box-shadow: none;
+}
+
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+  border-color: color-mix(in srgb, var(--fat-accent-blue) 55%, white);
+  box-shadow: var(--fts-ring);
+}
+
+.form-label {
+  font-weight: 600;
+  color: var(--fat-deep-blue);
+}
+
+/* --- Utilities ----------------------------------------------------------- */
+.text-fat-primary {
+  color: var(--fat-primary-blue) !important;
+}
+
+.text-fat-deep {
+  color: var(--fat-deep-blue) !important;
+}
+
+.text-fat-dark {
+  color: var(--fat-dark) !important;
+}
+
+.bg-fat-bg {
+  background-color: var(--fat-bg) !important;
+}
+
+.bg-fat-primary {
+  background-color: var(--fat-primary-blue) !important;
+  color: #fff !important;
+}
+
+.bg-fat-accent {
+  background-color: var(--fat-accent-blue) !important;
+  color: #0b1220 !important;
+}
+
+.rounded-fts-sm {
+  border-radius: var(--fts-radius-sm) !important;
+}
+
+.rounded-fts-md {
+  border-radius: var(--fts-radius-md) !important;
+}
+
+.rounded-fts-lg {
+  border-radius: var(--fts-radius-lg) !important;
+}
+
+.shadow-fts-sm {
+  box-shadow: var(--fts-shadow-sm) !important;
+}
+
+.shadow-fts-md {
+  box-shadow: var(--fts-shadow-md) !important;
+}
+
+.shadow-fts-lg {
+  box-shadow: var(--fts-shadow-lg) !important;
+}
+
+/* CTA cluster */
+.fts-cta {
+  display: inline-flex;
+  gap: calc(var(--fts-spacing) * 2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Eyebrow chips */
+.badge-fts {
+  background-color: color-mix(in srgb, var(--fat-primary-blue) 12%, white);
+  color: var(--fat-primary-blue);
+  font-family: var(--fts-font-ui);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Timeline card */
+.timeline-card {
+  border-radius: var(--fts-radius-lg);
+  border: 1px solid color-mix(in srgb, var(--fat-deep-blue) 10%, white);
+  box-shadow: var(--fts-shadow-md);
+  background-color: #fff;
+}
+
+/* Responsive canvas sizing */
+#fire-grid {
+  image-rendering: pixelated;
+  border-radius: var(--fts-radius-md);
+  border: 1px solid color-mix(in srgb, var(--fat-deep-blue) 15%, white);
+  background-color: #fff;
+}
+
+/* Footer callout */
+.footer-cta {
+  border-radius: var(--fts-radius-lg);
+  background: linear-gradient(130deg, #012840 0%, #034C8C 55%, #41AEF2 100%);
+  color: #fff;
+  box-shadow: var(--fts-shadow-lg);
+}
+
+/* Admin login override (ensures Bootstrap classes apply to Django auth forms) */
+.auth-card {
+  max-width: 420px;
+  margin: 0 auto;
+  border-radius: var(--fts-radius-lg);
+  box-shadow: var(--fts-shadow-md);
+  background-color: #fff;
+  padding: 2.5rem;
+}
+
+/* Ensure toast / alerts spacing */
+.alert {
+  border-radius: var(--fts-radius-md);
+}
+
+/* Navigation toggler */
+.navbar-toggler {
+  border-radius: var(--fts-radius-md);
+  border-color: color-mix(in srgb, var(--fat-deep-blue) 10%, white);
+}
+
+.navbar-toggler:focus {
+  box-shadow: var(--fts-ring);
+}

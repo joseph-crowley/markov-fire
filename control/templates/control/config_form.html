@@ -1,0 +1,122 @@
+{% extends 'control/base.html' %}
+
+{% block title %}New Configuration | Fat Tailed Solutions{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-xl-8">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div>
+                        <span class="badge badge-fts mb-2">Scenario authoring</span>
+                        <h1 class="h3 mb-0">Create Simulation Configuration</h1>
+                    </div>
+                    <a href="{% url 'control:config-list' %}" class="btn btn-outline-primary">Back to list</a>
+                </div>
+                <div class="card shadow-fts-lg">
+                    <div class="card-body p-4 p-lg-5">
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger">
+                                    {{ form.non_field_errors }}
+                                </div>
+                            {% endif %}
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                                    {{ form.name }}
+                                    {% for error in form.name.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.slug.id_for_label }}">Slug</label>
+                                    {{ form.slug }}
+                                    {% for error in form.slug.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+                                    {{ form.description }}
+                                    {% for error in form.description.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label" for="{{ form.grid_size.id_for_label }}">Grid Size</label>
+                                    {{ form.grid_size }}
+                                    {% for error in form.grid_size.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label" for="{{ form.time_steps.id_for_label }}">Time Steps</label>
+                                    {{ form.time_steps }}
+                                    {% for error in form.time_steps.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label" for="{{ form.stochastic_seed.id_for_label }}">Seed</label>
+                                    {{ form.stochastic_seed }}
+                                    {% for error in form.stochastic_seed.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ form.temporal_parameters.id_for_label }}">Temporal Parameters</label>
+                                    {{ form.temporal_parameters }}
+                                    {% for error in form.temporal_parameters.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ form.spatial_parameters.id_for_label }}">Spatial Parameters</label>
+                                    {{ form.spatial_parameters }}
+                                    {% for error in form.spatial_parameters.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ form.resource_parameters.id_for_label }}">Resource Parameters</label>
+                                    {{ form.resource_parameters }}
+                                    {% for error in form.resource_parameters.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ form.environment_parameters.id_for_label }}">Environment Parameters</label>
+                                    {{ form.environment_parameters }}
+                                    {% for error in form.environment_parameters.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.environment_preset.id_for_label }}">Environment Preset</label>
+                                    {{ form.environment_preset }}
+                                    {% for error in form.environment_preset.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ form.resource_preset.id_for_label }}">Resource Preset</label>
+                                    {{ form.resource_preset }}
+                                    {% for error in form.resource_preset.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end mt-4">
+                                <button class="btn btn-primary" type="submit">Save configuration</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

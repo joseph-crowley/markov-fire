@@ -1,0 +1,110 @@
+{% extends 'control/base.html' %}
+
+{% block title %}Fat Tailed Solutions | Wildfire Intelligence{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-fat-bg border-bottom">
+    <div class="container">
+        <div class="row align-items-center gy-4">
+            <div class="col-lg-7">
+                <span class="badge badge-fts mb-3">Fat-tail aware wildfire ops</span>
+                <h1 class="display-5 fw-bold mb-3">Model the extremes. Deploy faster. Stay ahead.</h1>
+                <p class="lead mb-4">The Markov Fire Portal translates stochastic fire behaviour into actionable dashboards, so operators can probe worst-case spread, rehearse suppression, and coordinate resources without guesswork.</p>
+                <div class="fts-cta">
+                    <a class="btn btn-primary btn-lg" href="{% url 'control:run-create' %}"><i class="fas fa-burn me-2"></i>Launch Simulation</a>
+                    <a class="btn btn-outline-primary btn-lg" href="{% url 'control:config-list' %}">Browse Configurations</a>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="p-4 p-lg-5 rounded-fts-lg shadow-fts-lg bg-white">
+                    <h2 class="h4 fw-semibold text-fat-deep">Fat Tailed Solutions</h2>
+                    <p class="mb-3">We build decision products for fat-tail risk. From wildfire to supply chain disruptions, our systems surface the high-impact outliers and give teams time to react.</p>
+                    <ul class="list-unstyled small mb-4">
+                        <li class="mb-2"><i class="fas fa-chart-line me-2 text-fat-primary"></i>Scenario streaming with live perimeters</li>
+                        <li class="mb-2"><i class="fas fa-bolt me-2 text-fat-primary"></i>Celery-driven pipeline, ready to scale</li>
+                        <li class="mb-2"><i class="fas fa-database me-2 text-fat-primary"></i>PostgreSQL persistence for replay & audit</li>
+                    </ul>
+                    <div class="d-flex gap-3">
+                        <a href="mailto:hello@fattailedsolutions.com" class="btn btn-secondary btn-sm">Talk to FTS</a>
+                        <a href="{% url 'control:run-list' %}" class="btn btn-outline-primary btn-sm">View recent runs</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <span class="fts-kicker">Temporal + spatial</span>
+                        <h3 class="h4 mt-2">Probabilistic spread engine</h3>
+                        <p>Continuous-time Markov processes feed weighted grid selection to mirror real ignition clusters and suppression patterns.</p>
+                        <ul class="small mb-0 ps-3">
+                            <li>Seeded reproducibility</li>
+                            <li>Dynamic environmental modifiers</li>
+                            <li>Resource-aware suppression</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <span class="fts-kicker">Live decision support</span>
+                        <h3 class="h4 mt-2">WebSocket situational awareness</h3>
+                        <p>Stream every tick to analysts and command posts. Canvas rendering and Chart.js timelines stay synced under load.</p>
+                        <ul class="small mb-0 ps-3">
+                            <li>Perimeter heatmap with suppression overlays</li>
+                            <li>Catch-up requests for late viewers</li>
+                            <li>API hooks for external dashboards</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <span class="fts-kicker">Operator-first</span>
+                        <h3 class="h4 mt-2">Configurable + auditable</h3>
+                        <p>Bootstrap forms keep every parameter explicit. Presets capture vegetation, topography, and playbooked resource packages.</p>
+                        <ul class="small mb-0 ps-3">
+                            <li>Role-ready admin tools</li>
+                            <li>Structured JSON config storage</li>
+                            <li>Post-run metrics & export paths</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="row align-items-center gy-4">
+            <div class="col-lg-6">
+                <h2 class="h3 fw-semibold text-fat-deep mb-3">Workflow in three decisive moves</h2>
+                <ol class="fs-6 ps-3">
+                    <li class="mb-3"><strong>Define scenarios.</strong> Tune temporal rates, environmental presets, and resource tactics from a single configuration hub.</li>
+                    <li class="mb-3"><strong>Execute asynchronously.</strong> Celery workers stream ticks to Channels and persist history for replay.</li>
+                    <li class="mb-3"><strong>Brief & iterate.</strong> Share dashboards, export snapshots, and compare outcomes across runs.</li>
+                </ol>
+                <div class="alert alert-primary shadow-fts-sm" role="alert">
+                    <strong>Need bespoke data?</strong> Bring perimeter shapefiles, satellite inputs, or tactical rosters—we’ll extend the engine with you.
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="footer-cta p-5">
+                    <h3 class="h4 fw-semibold mb-3">Bring Fat Tailed thinking to your wildfire program.</h3>
+                    <p class="mb-4">Drop us a line for integration support, on-site training, or to pilot the platform with your next exercise.</p>
+                    <a href="mailto:hello@fattailedsolutions.com" class="btn btn-light btn-lg text-fat-dark">Book a session</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

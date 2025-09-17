@@ -1,0 +1,58 @@
+{% extends 'control/base.html' %}
+
+{% block title %}Simulation Runs | Fat Tailed Solutions{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between gap-3 mb-4">
+            <div>
+                <span class="badge badge-fts mb-2">Operational log</span>
+                <h1 class="h3 mb-0">Simulation Runs</h1>
+                <p class="text-muted mb-0">Monitor active fire experiments, evaluate extinguishment timelines, and replay tick history.</p>
+            </div>
+            <div class="fts-cta">
+                <a class="btn btn-primary" href="{% url 'control:run-create' %}"><i class="fas fa-burn me-2"></i>Launch run</a>
+                <a class="btn btn-outline-primary" href="{% url 'control:config-list' %}">Manage configs</a>
+            </div>
+        </div>
+
+        {% if runs %}
+            <div class="table-responsive shadow-fts-md rounded-fts-lg bg-white">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Run ID</th>
+                            <th scope="col">Configuration</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Ticks</th>
+                            <th scope="col">Extinguishment</th>
+                            <th scope="col">Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for run in runs %}
+                            <tr>
+                                <td><a href="{% url 'control:run-detail' pk=run.id %}" class="text-decoration-none">{{ run.id }}</a></td>
+                                <td>{{ run.config.name }}</td>
+                                <td>
+                                    <span class="badge rounded-pill {% if run.status == 'completed' %}bg-success{% elif run.status == 'running' %}bg-fat-accent text-dark{% elif run.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                        {{ run.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ run.total_ticks }}</td>
+                                <td>{% if run.extinguishment_step %}{{ run.extinguishment_step }}{% else %}—{% endif %}</td>
+                                <td>{{ run.updated_at|date:'Y-m-d H:i' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info shadow-fts-sm" role="alert">
+                No runs yet. Launch one to populate this view.
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
