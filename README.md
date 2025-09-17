@@ -24,11 +24,14 @@ docker compose up --build
 
 Set `APP_PORT` in `.env` (defaults to `8000`) to control the exposed port. The provided `.env` sets it to `8001`; visit `http://localhost:8001/` (or your chosen port) and log in with a Django superuser (create one via `docker compose run --rm web python manage.py createsuperuser`).
 
+Celery containers drop root privileges using `APP_UID` / `APP_GID` (default `1000`). Adjust these in `.env` to match your host user if bind-mount permissions require it.
+
 From the homepage you can:
 
 - Explore the Fat Tailed Solutions overview describing the project mission and workflow.
 - Jump straight to “Launch a Simulation” or “Browse Configurations” via CTA buttons.
 - Access navigation links for configurations, active runs, and new run creation.
+- Load starter configs with `python manage.py loaddata simulation/fixtures/example_configs.json` for baseline scenarios.
 
 ## Local Development
 

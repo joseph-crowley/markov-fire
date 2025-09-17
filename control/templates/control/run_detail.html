@@ -200,20 +200,49 @@ function renderGrid(grid) {
     canvas.style.height = `${gridSize * scale}px`;
 }
 
+function applyTicks(ticks, { reset = false } = {}) {
+    if (!Array.isArray(ticks)) return;
+    if (reset) {
+        timelineData.labels.length = 0;
+        timelineData.datasets.forEach(ds => ds.data.length = 0);
+    }
+    const existing = new Set(timelineData.labels);
+    ticks.forEach(tick => {
+        const tickValue = Number(tick.tick);
+        if (existing.has(tickValue) && !reset) {
+            return;
+        }
+        timelineData.labels.push(tickValue);
+        timelineData.datasets[0].data.push(tick.activeCells);
+        timelineData.datasets[1].data.push(tick.burnedCells);
+        existing.add(tickValue);
+    });
+    timelineChart.update('none');
+    if (ticks.length) {
+        const latest = ticks[ticks.length - 1];
+        tickCounter.textContent = latest.tick;
+        activeCount.textContent = latest.activeCells;
+        burnedCount.textContent = latest.burnedCells;
+        suppressedCount.textContent = latest.suppressedCells;
+    }
+}
+
+function handleGrid(grid) {
+    if (!grid) return;
+    renderGrid(grid);
+}
+
 socket.addEventListener('message', (event) => {
     const data = JSON.parse(event.data);
-    if (data.type === 'tick') {
-        tickCounter.textContent = data.tick;
-        activeCount.textContent = data.activeCells;
-        burnedCount.textContent = data.burnedCells;
-        suppressedCount.textContent = data.suppressedCells;
-        if (data.grid) {
-            renderGrid(data.grid);
-        }
-        timelineData.labels.push(data.tick);
-        timelineData.datasets[0].data.push(data.activeCells);
-        timelineData.datasets[1].data.push(data.burnedCells);
-        timelineChart.update('none');
+    if (data.type === 'snapshot') {
+        applyTicks(data.ticks, { reset: true });
+        handleGrid(data.latestGrid);
+    } else if (data.type === 'catchup') {
+        applyTicks(data.ticks);
+        handleGrid(data.latestGrid);
+    } else if (data.type === 'tick') {
+        applyTicks([data]);
+        handleGrid(data.grid);
     } else if (data.type === 'completed') {
         console.info('Simulation completed', data);
     } else if (data.type === 'failed') {

@@ -97,8 +97,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-CONTROL_STATIC_DIR = BASE_DIR / 'control' / 'static'
-STATICFILES_DIRS = [CONTROL_STATIC_DIR] if CONTROL_STATIC_DIR.exists() else []
+STATICFILES_DIRS = []
 
 if DEBUG:
     STORAGES = {
@@ -145,6 +144,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_BEAT_SCHEDULE = {}
 CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 # Session
 SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', '0') == '1'
