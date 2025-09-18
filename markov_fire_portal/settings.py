@@ -125,6 +125,9 @@ REST_FRAMEWORK = {
     ],
 }
 
+LOGIN_REDIRECT_URL = 'control:home'
+LOGOUT_REDIRECT_URL = 'control:home'
+
 # Channels
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
 CHANNEL_LAYERS = {

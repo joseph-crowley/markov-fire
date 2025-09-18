@@ -34,13 +34,20 @@
                                 {{ request.user.get_short_name|default:request.user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow-fts-sm">
+                                <li><a class="dropdown-item" href="{% url 'password_change' %}">Change password</a></li>
                                 <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'logout' %}">Log out</a></li>
+                                <li>
+                                    <form method="post" action="{% url 'logout' %}" class="px-3">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-link dropdown-item p-0">Log out</button>
+                                    </form>
+                                </li>
                             </ul>
                         </li>
                     {% else %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Log in</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Register</a></li>
                     {% endif %}
                 </ul>
             </div>

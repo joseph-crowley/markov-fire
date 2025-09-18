@@ -1,5 +1,8 @@
 from django import forms
 
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm
+
 from simulation.models import (
     SimulationConfig,
     SimulationRun,
@@ -104,6 +107,24 @@ class SimulationRunForm(forms.ModelForm):
 
         self.fields['seed'].widget.attrs['class'] = 'form-control'
         self.fields['seed'].widget.attrs.setdefault('placeholder', 'Seed (optional)')
+
+
+class RegistrationForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+
+    class Meta:
+        model = get_user_model()
+        fields = ('username', 'email', 'password1', 'password2')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            css = field.widget.attrs.get('class', '')
+            field.widget.attrs['class'] = f"form-control {css}".strip()
+        self.fields['username'].widget.attrs.setdefault('placeholder', 'Choose a username')
+        self.fields['email'].widget.attrs.setdefault('placeholder', 'you@example.com')
+        self.fields['password1'].widget.attrs.setdefault('placeholder', 'Password')
+        self.fields['password2'].widget.attrs.setdefault('placeholder', 'Confirm password')
 
 
 class ScenarioForm(forms.ModelForm):

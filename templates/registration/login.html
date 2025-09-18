@@ -19,11 +19,11 @@
                         {% csrf_token %}
                         <div class="mb-3">
                             <label class="form-label" for="id_username">Username</label>
-                            {{ form.username.as_widget(attrs={'class': 'form-control', 'placeholder': 'Enter username'}) }}
+                            {{ form.username }}
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="id_password">Password</label>
-                            {{ form.password.as_widget(attrs={'class': 'form-control', 'placeholder': 'Enter password'}) }}
+                            {{ form.password }}
                         </div>
                         <div class="d-grid gap-2">
                             <button class="btn btn-primary" type="submit">Log in</button>
@@ -31,6 +31,8 @@
                         </div>
                         <input type="hidden" name="next" value="{{ next }}">
                     </form>
+                    <p class="text-muted small mt-3 mb-0">Forgot your password? <a href="{% url 'password_reset' %}">Reset it here</a>.</p>
+                    <p class="text-muted small">Need an account? <a href="{% url 'register' %}">Create one</a>.</p>
                 </div>
             </div>
         </div>

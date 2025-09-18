@@ -1,6 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.messages.views import SuccessMessageMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
@@ -26,6 +28,7 @@ from .forms import (
     SimulationRunForm,
     ScenarioForm,
     ScenarioVersionForm,
+    RegistrationForm,
 )
 
 
@@ -213,3 +216,18 @@ class ScenarioVersionCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context['scenario'] = self.scenario
         return context
+
+
+class RegisterView(SuccessMessageMixin, CreateView):
+    form_class = RegistrationForm
+    template_name = 'registration/register.html'
+    success_message = 'Welcome aboard, {username}!'
+
+    def get_success_url(self):
+        return reverse_lazy('control:home')
+
+    def form_valid(self, form):
+        user = form.save()
+        login(self.request, user)
+        messages.success(self.request, self.success_message.format(username=user.username))
+        return redirect(self.get_success_url())

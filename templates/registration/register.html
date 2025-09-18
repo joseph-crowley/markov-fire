@@ -1,0 +1,37 @@
+{% extends 'control/base.html' %}
+{% block title %}Create Account · Fat Tailed Solutions{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="text-center mb-4">
+                <h1 class="h3">Create your account</h1>
+                <p class="text-muted mb-0">Launch simulations, manage scenarios, and monitor analytics.</p>
+            </div>
+            <div class="card shadow-fts-sm">
+                <div class="card-body p-4">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label class="form-label" for="id_{{ field.name }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <div class="form-text">{{ field.help_text }}</div>
+                                {% endif %}
+                                {% for error in field.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                        <div class="d-grid mb-3">
+                            <button class="btn btn-primary" type="submit">Create account</button>
+                        </div>
+                        <p class="text-muted small mb-0">Already have an account? <a href="{% url 'login' %}">Sign in</a>.</p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
