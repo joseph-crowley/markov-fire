@@ -42,6 +42,9 @@ class SimulationConsumer(AsyncWebsocketConsumer):
     async def simulation_failed(self, event: dict[str, Any]) -> None:
         await self.send(text_data=json.dumps({'type': 'failed', **event['message']}))
 
+    async def simulation_paused(self, event: dict[str, Any]) -> None:
+        await self.send(text_data=json.dumps({'type': 'paused', **event['message']}))
+
     @database_sync_to_async
     def _run_exists(self, run_id: str) -> bool:
         return SimulationRun.objects.filter(id=run_id).exists()

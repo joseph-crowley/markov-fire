@@ -9,6 +9,9 @@
             <p class="text-muted mb-0">Slug: <code>{{ scenario.slug }}</code></p>
         </div>
         <div class="btn-group">
+            {% if is_demo_scenario %}
+            <button id="seed-demo-run" class="btn btn-outline-primary"><i class="fa fa-fire me-2"></i>Seed Demo Run</button>
+            {% endif %}
             <a href="{% url 'control:scenario-version-create' slug=scenario.slug %}" class="btn btn-primary"><i class="fa fa-plus me-2"></i>New Version</a>
         </div>
     </div>
@@ -87,8 +90,20 @@
                                 <td>v{{ version.version }}</td>
                                 <td>{{ version.label|default:'—' }}</td>
                                 <td>{{ version.config.name }}</td>
-                                <td>{{ version.fuel_layer.name if version.fuel_layer else '—' }}</td>
-                                <td>{{ version.moisture_layer.name if version.moisture_layer else '—' }}</td>
+                                <td>
+                                    {% if version.fuel_layer %}
+                                        {{ version.fuel_layer.name }}
+                                    {% else %}
+                                        &mdash;
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if version.moisture_layer %}
+                                        {{ version.moisture_layer.name }}
+                                    {% else %}
+                                        &mdash;
+                                    {% endif %}
+                                </td>
                                 <td>{% if version.is_locked %}<i class="fa fa-lock text-warning"></i>{% else %}<span class="text-muted">Open</span>{% endif %}</td>
                                 <td>{{ version.created_at|date:'Y-m-d H:i' }}</td>
                             </tr>
@@ -190,6 +205,9 @@
                     </tbody>
                 </table>
             </div>
+            <div class="mt-4">
+                <canvas id="analytics-chart" height="160"></canvas>
+            </div>
             <hr class="my-4">
             <div id="analytics-diff" class="analytics-diff">
                 <h3 class="h6 text-uppercase text-muted mb-3">Compare Runs</h3>
@@ -227,18 +245,16 @@
         </div>
     </div>
 </div>
-{% if analytics %}
+{% endblock %}
+
 {% block extra_scripts %}
 {{ block.super }}
+{% if analytics %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 {{ analytics_payload|json_script:"analytics-data" }}
 <script>
 (() => {
     const payload = JSON.parse(document.getElementById('analytics-data').textContent || '[]');
-    if (!Array.isArray(payload) || payload.length < 2) {
-        document.getElementById('run-diff-button').disabled = true;
-        return;
-    }
-
     const runSelectA = document.getElementById('run-diff-a');
     const runSelectB = document.getElementById('run-diff-b');
     const diffButton = document.getElementById('run-diff-button');
@@ -258,6 +274,38 @@
 
     addOptions(runSelectA);
     addOptions(runSelectB);
+
+    if (!Array.isArray(payload) || payload.length < 2) {
+        diffButton.disabled = true;
+    }
+
+    const chartEl = document.getElementById('analytics-chart');
+    if (chartEl) {
+        const colours = ['#FF6B35', '#1F7A8C', '#2E294E', '#FFB400', '#588157', '#669BBC'];
+        const datasets = (payload || []).map((item, idx) => {
+            const points = (item.distributions?.burned_cells || []).map(([tick, value]) => ({x: tick, y: value}));
+            return {
+                label: item.label,
+                data: points,
+                borderColor: colours[idx % colours.length],
+                backgroundColor: 'rgba(0,0,0,0)',
+                tension: 0.25,
+            };
+        }).filter(ds => ds.data.length);
+        if (datasets.length) {
+            new Chart(chartEl.getContext('2d'), {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { type: 'linear', title: { display: true, text: 'Tick' } },
+                        y: { beginAtZero: true, title: { display: true, text: 'Burned Cells' } },
+                    },
+                },
+            });
+        }
+    }
 
     const getCsrfToken = () => {
         const match = document.cookie.match(/csrftoken=([^;]+)/);
@@ -326,6 +374,39 @@
     });
 })();
 </script>
-{% endblock %}
+{% endif %}
+{% if is_demo_scenario %}
+<script>
+(() => {
+    const button = document.getElementById('seed-demo-run');
+    if (!button) return;
+    const getCsrfToken = () => {
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? match[1] : '';
+    };
+    button.addEventListener('click', async () => {
+        button.disabled = true;
+        const original = button.innerHTML;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Seeding';
+        try {
+            const response = await fetch(`/api/scenarios/{{ scenario.id }}/seed_demo_run/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken(),
+                },
+                body: JSON.stringify({ reset: true }),
+            });
+            if (!response.ok) throw new Error('Failed');
+            window.location.reload();
+        } catch (error) {
+            button.innerHTML = original;
+            button.classList.remove('btn-outline-primary');
+            button.classList.add('btn-danger');
+            button.disabled = false;
+        }
+    });
+})();
+</script>
 {% endif %}
 {% endblock %}

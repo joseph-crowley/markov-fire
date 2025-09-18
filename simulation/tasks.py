@@ -92,6 +92,8 @@ def run_simulation_task(self, run_id: str) -> None:
         extinguish_series = []
         suppress_series = []
 
+        paused = False
+
         for tick in simulator.run():
             last_tick_index = tick.index
             max_active = max(max_active, tick.active_cells)
@@ -142,6 +144,33 @@ def run_simulation_task(self, run_id: str) -> None:
             if CHECKPOINT_INTERVAL and (tick.index + 1) % CHECKPOINT_INTERVAL == 0:
                 _persist_checkpoint(run, simulator, tick.index, max_active, extinguishment_step)
 
+            if (tick.index % 5 == 0) or run.checkpoint_requested or run.pause_requested:
+                run.refresh_from_db(fields=['checkpoint_requested', 'pause_requested'])
+
+            if run.checkpoint_requested:
+                _persist_checkpoint(run, simulator, tick.index, max_active, extinguishment_step)
+                run.checkpoint_requested = False
+                run.save(update_fields=['checkpoint_requested'])
+
+            if run.pause_requested:
+                _persist_checkpoint(run, simulator, tick.index, max_active, extinguishment_step)
+                run.pause_requested = False
+                run.paused_at_tick = tick.index
+                run.status = SimulationRun.Status.PAUSED
+                run.save(update_fields=['pause_requested', 'paused_at_tick', 'status', 'updated_at'])
+                paused = True
+                async_to_sync(channel_layer.group_send)(
+                    f'simulation_{run.id}',
+                    {
+                        'type': 'simulation.paused',
+                        'message': {
+                            'status': 'paused',
+                            'tick': tick.index,
+                        },
+                    }
+                )
+                break
+
         if tick_records:
             SimulationTick.objects.bulk_create(tick_records)
 
@@ -179,6 +208,9 @@ def run_simulation_task(self, run_id: str) -> None:
             'extinguish_events': extinguish_series,
             'suppress_events': suppress_series,
         }
+
+        if paused:
+            return
 
         SimulationAnalytics.objects.update_or_create(
             run=run,

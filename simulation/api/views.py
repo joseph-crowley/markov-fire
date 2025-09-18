@@ -15,6 +15,7 @@ from simulation.models import (
     SimulationAnalytics,
 )
 from simulation.tasks import run_simulation_task
+from simulation.services.demo import generate_demo_run
 
 from .serializers import (
     SimulationConfigSerializer,
@@ -52,6 +53,22 @@ class SimulationRunViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixin
     def perform_create(self, serializer):
         run = serializer.save(status=SimulationRun.Status.PENDING)
         run_simulation_task.delay(str(run.id))
+
+    @action(detail=True, methods=['post'])
+    def force_checkpoint(self, request, pk=None):
+        run = self.get_object()
+        if run.status not in {SimulationRun.Status.RUNNING, SimulationRun.Status.PAUSED}:
+            return Response({'detail': 'Run is not active.'}, status=status.HTTP_400_BAD_REQUEST)
+        SimulationRun.objects.filter(pk=run.pk).update(checkpoint_requested=True)
+        return Response({'detail': 'Checkpoint request queued.'})
+
+    @action(detail=True, methods=['post'])
+    def pause(self, request, pk=None):
+        run = self.get_object()
+        if run.status != SimulationRun.Status.RUNNING:
+            return Response({'detail': 'Run is not currently running.'}, status=status.HTTP_400_BAD_REQUEST)
+        SimulationRun.objects.filter(pk=run.pk).update(pause_requested=True)
+        return Response({'detail': 'Pause request queued.'})
 
     @action(detail=True, methods=['post'])
     def start(self, request, pk=None):
@@ -111,6 +128,16 @@ class ScenarioViewSet(viewsets.ModelViewSet):
             'summary_b': summary_b,
             'summary_delta': delta,
         })
+
+    @action(detail=True, methods=['post'])
+    def seed_demo_run(self, request, pk=None):
+        scenario = self.get_object()
+        if scenario.slug != 'demo-fire-corridor':
+            return Response({'detail': 'Demo seeding available only for the demo scenario.'}, status=status.HTTP_400_BAD_REQUEST)
+        result = generate_demo_run(reset=bool(request.data.get('reset', False)))
+        run = result.run
+        serializer = SimulationRunSerializer(run, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class ScenarioVersionViewSet(viewsets.ModelViewSet):

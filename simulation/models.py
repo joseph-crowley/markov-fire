@@ -68,6 +68,7 @@ class SimulationRun(TimestampedModel):
     class Status(models.TextChoices):
         PENDING = 'pending', 'Pending'
         RUNNING = 'running', 'Running'
+        PAUSED = 'paused', 'Paused'
         COMPLETED = 'completed', 'Completed'
         FAILED = 'failed', 'Failed'
         CANCELLED = 'cancelled', 'Cancelled'
@@ -91,6 +92,9 @@ class SimulationRun(TimestampedModel):
     resume_from = models.ForeignKey(
         'Checkpoint', null=True, blank=True, on_delete=models.SET_NULL, related_name='resumed_runs'
     )
+    checkpoint_requested = models.BooleanField(default=False)
+    pause_requested = models.BooleanField(default=False)
+    paused_at_tick = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']

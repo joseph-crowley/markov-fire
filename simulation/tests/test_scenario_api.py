@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from simulation.models import Scenario, ScenarioVersion, SimulationConfig, ScenarioTag, SimulationRun, SimulationAnalytics
 from simulation.tasks import run_simulation_task
+from simulation.services.demo import generate_demo_run
 
 
 @pytest.fixture
@@ -141,3 +142,29 @@ def test_scenario_list_includes_nested_data(client, config):
     payload = next(item for item in response.data if item['id'] == str(scenario.id))
     assert payload['base_config']['id'] == str(config.id)
     assert payload['active_version']['version'] == 1
+
+
+@pytest.mark.django_db
+def test_run_force_checkpoint_and_pause(client, config):
+    scenario = Scenario.objects.create(name='API Scenario', slug='api-scenario', base_config=config)
+    version = ScenarioVersion.objects.create(scenario=scenario, config=config, metadata={})
+    run = SimulationRun.objects.create(config=config, scenario_version=version, status=SimulationRun.Status.RUNNING)
+
+    checkpoint_resp = client.post(f'/api/runs/{run.id}/force_checkpoint/')
+    assert checkpoint_resp.status_code == 200
+    run.refresh_from_db()
+    assert run.checkpoint_requested is True
+
+    pause_resp = client.post(f'/api/runs/{run.id}/pause/')
+    assert pause_resp.status_code == 200
+    run.refresh_from_db()
+    assert run.pause_requested is True
+
+
+@pytest.mark.django_db
+def test_seed_demo_run_action(client):
+    result = generate_demo_run(reset=True)
+    scenario = result.scenario
+    response = client.post(f'/api/scenarios/{scenario.id}/seed_demo_run/', {'reset': True}, format='json')
+    assert response.status_code == 201
+    assert response.data['analytics']['summary']['total_ticks'] == 200

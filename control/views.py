@@ -176,7 +176,9 @@ class ScenarioDetailView(LoginRequiredMixin, DetailView):
                 'run_id': str(record.run_id),
                 'label': f"Run {record.run_id} · {version_label}",
                 'summary': record.summary or {},
+                'distributions': record.distributions or {},
             })
+        context['is_demo_scenario'] = (self.object.metadata or {}).get('theme') == 'demo-corridor'
         return context
 
 

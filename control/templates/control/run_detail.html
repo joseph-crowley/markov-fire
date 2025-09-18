@@ -85,7 +85,7 @@
                             <dt class="col-6">Configuration</dt>
                             <dd class="col-6 text-end">{{ config.name }}</dd>
                             <dt class="col-6">Status</dt>
-                            <dd class="col-6 text-end">{{ run.get_status_display }}</dd>
+                            <dd class="col-6 text-end" id="run-status-value">{{ run.get_status_display }}</dd>
                             <dt class="col-6">Created</dt>
                             <dd class="col-6 text-end">{{ run.created_at|date:'Y-m-d H:i' }}</dd>
                             <dt class="col-6">Started</dt>
@@ -109,6 +109,12 @@
                             <dt class="col-6">Resumed from</dt>
                             <dd class="col-6 text-end">{% if resume_from %}Tick {{ resume_from.tick_index }}{% else %}<span class="text-muted">—</span>{% endif %}</dd>
                         </dl>
+                        {% if run.status == 'running' %}
+                        <div class="d-flex gap-2 mt-3">
+                            <button class="btn btn-outline-primary btn-sm" id="force-checkpoint">Force checkpoint</button>
+                            <button class="btn btn-outline-danger btn-sm" id="pause-run">Pause run</button>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% if analytics %}
@@ -204,6 +210,56 @@ const activeCount = document.getElementById('active-count');
 const burnedCount = document.getElementById('burned-count');
 const suppressedCount = document.getElementById('suppressed-count');
 const timelineCtx = document.getElementById('timeline-chart').getContext('2d');
+const statusValue = document.getElementById('run-status-value');
+const checkpointBtn = document.getElementById('force-checkpoint');
+const pauseBtn = document.getElementById('pause-run');
+
+const getCsrfToken = () => {
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? match[1] : '';
+};
+
+if (checkpointBtn) {
+    checkpointBtn.addEventListener('click', async () => {
+        checkpointBtn.disabled = true;
+        const original = checkpointBtn.textContent;
+        checkpointBtn.textContent = 'Requesting…';
+        try {
+            const response = await fetch(`/api/runs/${runId}/force_checkpoint/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+            });
+            if (!response.ok) throw new Error('failed');
+            checkpointBtn.textContent = 'Checkpoint queued';
+            checkpointBtn.classList.replace('btn-outline-primary', 'btn-success');
+        } catch (error) {
+            checkpointBtn.textContent = 'Retry checkpoint';
+            checkpointBtn.classList.replace('btn-outline-primary', 'btn-danger');
+            checkpointBtn.disabled = false;
+        }
+    });
+}
+
+if (pauseBtn) {
+    pauseBtn.addEventListener('click', async () => {
+        pauseBtn.disabled = true;
+        const original = pauseBtn.textContent;
+        pauseBtn.textContent = 'Pausing…';
+        try {
+            const response = await fetch(`/api/runs/${runId}/pause/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+            });
+            if (!response.ok) throw new Error('failed');
+            pauseBtn.textContent = 'Pause requested';
+            pauseBtn.classList.replace('btn-outline-danger', 'btn-warning');
+        } catch (error) {
+            pauseBtn.textContent = 'Retry pause';
+            pauseBtn.classList.replace('btn-outline-danger', 'btn-danger');
+            pauseBtn.disabled = false;
+        }
+    });
+}
 
 const stateColors = {
     0: '#FFFFFF',
@@ -318,6 +374,9 @@ socket.addEventListener('message', (event) => {
         handleGrid(data.grid);
     } else if (data.type === 'completed') {
         console.info('Simulation completed', data);
+    } else if (data.type === 'paused') {
+        if (statusValue) statusValue.textContent = 'Paused';
+        if (pauseBtn) pauseBtn.disabled = true;
     } else if (data.type === 'failed') {
         alert('Simulation failed: ' + data.error);
     }

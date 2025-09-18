@@ -82,6 +82,16 @@ pytest
 
 (or `python manage.py test` after installing `pytest-django` or using Django's test runner).
 
+## Scenario Seeds & Demo Runs
+
+The project ships with two convenience seeders so you can populate the portal with high-intensity examples:
+
+- `python manage.py seed_extreme_scenarios [--reset]` creates three "MegaFire" scenarios with physics-enabled ROS, pyroconvective winds, and heavy spotting. Add `--reset` to rebuild configs and versions if you tweak parameters.
+- `python manage.py seed_demo_fire [--reset]` generates the deterministic “Demo Fire Corridor” scenario and a 200‑tick synthetic run complete with checkpoints and analytics. The demo can also be regenerated from the Scenario UI via the **Seed Demo Run** button.
+- `./scripts/bootstrap_demo_data.sh` runs both commands in sequence, making it handy for CI smoke tests or local demos.
+
+During live runs you can now issue a **Force checkpoint** or **Pause run** request directly from the run detail page. The simulation worker will snapshot state at the next tick and, if paused, mark the run as `Paused` so you can resume from the latest checkpoint.
+
 ## Roadmap
 
 - Geospatial overlays (wind fields, terrain data)
